@@ -1,0 +1,285 @@
+/* RequirementList Tree Table Styles */
+
+/* 工具栏样式 */
+.toolbar {
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+}
+
+.toolbar-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-right: 8px;
+}
+
+.filter-select {
+  width: 140px;
+}
+
+.filter-select .ant-select-selector {
+  border-color: #e5e7eb !important;
+}
+
+.toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+/* 树形表格样式 */
+.tree-table {
+  border: none;
+  border-radius: 0;
+}
+
+.tree-table .ant-table {
+  border-radius: 0;
+}
+
+.tree-table .ant-table-container {
+  border: none;
+}
+
+/* Story 行样式 */
+.story-row {
+  background: #ffffff;
+  font-weight: 500;
+}
+
+.story-row:hover {
+  background: #f0f9ff;
+}
+
+.story-row > td {
+  padding: 8px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Task 行样式 */
+.task-row {
+  background: #fafafa;
+}
+
+.task-row:hover {
+  background: #f5f5f5;
+}
+
+.task-row > td {
+  padding: 6px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Bug 行样式 */
+.bug-row {
+  background: #fafafa;
+}
+
+.bug-row:hover {
+  background: #f5f5f5;
+}
+
+.bug-row > td {
+  padding: 6px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 标题单元格样式 */
+.title-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 缩进容器 */
+.title-cell-indent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-cell-indent.level-1 {
+  padding-left: 24px;
+}
+
+.title-cell-indent.level-2 {
+  padding-left: 48px;
+}
+
+/* 类型标签样式 */
+.type-tag {
+  font-size: 10px !important;
+  padding: 0 6px !important;
+  line-height: 18px !important;
+  border-radius: 3px !important;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* 编号样式 */
+.story-number,
+.task-number,
+.bug-number {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.number-text {
+  font-weight: 500;
+  color: #374151;
+}
+
+.children-count {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+/* Story 标题链接样式 */
+.story-title-link {
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.story-title-link:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* Task 标题样式 */
+.task-title {
+  color: #1f2937;
+  font-weight: 400;
+}
+
+.task-title-link {
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 400;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.task-title-link:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* Bug 标题链接样式 */
+.bug-title-link {
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 400;
+  transition: color 0.2s ease;
+}
+
+.bug-title-link:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+/* 展开图标样式 */
+.expand-icon {
+  transition: transform 0.2s ease;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.expand-icon:hover {
+  color: #3b82f6;
+}
+
+.expand-icon-inline {
+  transition: transform 0.2s ease;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6b7280;
+  margin-right: 4px;
+  display: inline-block;
+  width: 12px;
+  text-align: center;
+}
+
+.expand-icon-inline:hover {
+  color: #3b82f6;
+}
+
+.action-dot {
+  padding: 0 4px !important;
+  height: 24px !important;
+}
+
+.action-dot:hover {
+  background-color: #f0f0f0 !important;
+}
+
+/* 缩进区域样式 */
+.ant-table-row-indent {
+  padding-left: 24px;
+}
+
+/* 隐藏展开图标列 */
+.tree-table .ant-table-row-expand-icon-cell {
+  display: none !important;
+}
+
+.tree-table .ant-table-expand-icon-col {
+  width: 0 !important;
+  display: none !important;
+}
+
+/* 表格样式覆盖 */
+.tree-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 500;
+  color: #666;
+  font-size: 13px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tree-table .ant-table-tbody > tr > td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.tree-table .ant-table-tbody > tr:hover > td {
+  background: #fafafa;
+}
+
+.ant-table-tbody > tr.ant-table-placeholder:hover > td {
+  background: #fafafa;
+}
+
+/* Tag 样式调整 */
+.ant-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-select {
+    width: 100%;
+  }
+  
+  .toolbar-actions {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+}

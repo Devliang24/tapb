@@ -1,0 +1,30 @@
+.settings-page {
+  padding: 0;
+}
+
+.settings-header {
+  margin-bottom: 16px;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.members-tab {
+  padding: 0;
+}
+
+.members-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.members-count {
+  font-size: 14px;
+  color: #666;
+}

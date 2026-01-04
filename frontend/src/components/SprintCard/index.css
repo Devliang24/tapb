@@ -1,0 +1,82 @@
+.sprint-card {
+  position: relative;
+  padding: 20px 16px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+  border: 1px solid #e8e9ec;
+  border-radius: 6px;
+}
+
+.sprint-card:hover {
+  border-color: #d0d3d8;
+  background: #fafbfc;
+}
+
+.sprint-card.selected {
+  background: #e6f4ff;
+  border-color: #91caff;
+}
+
+/* "当前" 标签 */
+.sprint-card-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 11px;
+  color: #52c41a;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 2px;
+  padding: 0 4px;
+  line-height: 16px;
+}
+
+.sprint-card-body {
+  display: flex;
+  gap: 10px;
+}
+
+.sprint-card-icon {
+  flex-shrink: 0;
+}
+
+.sprint-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sprint-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #262626;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 24px;
+  margin-bottom: 8px;
+}
+
+.sprint-card-dates {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-bottom: 10px;
+}
+
+.sprint-card-stats {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.sprint-card-percentage {
+  color: #52c41a;
+  font-weight: 500;
+  min-width: 28px;
+}
+
+.sprint-card-count {
+  color: #8c8c8c;
+}

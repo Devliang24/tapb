@@ -1,0 +1,88 @@
+.iterations-container {
+  display: flex;
+  height: calc(100% + 48px);
+  min-height: 0;
+  background: #fff;
+  margin: -24px;
+  width: calc(100% + 48px);
+}
+
+/* 左侧边栏 - 右边框从顶到底连接 */
+.iterations-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-right: 1px solid #edeef1;
+  height: 100%;
+}
+
+.sidebar-header {
+  padding: 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.sidebar-section {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #8c8c8c;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sidebar-section-icon {
+  font-size: 14px;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 12px 12px;
+}
+
+.sidebar-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+/* 右侧主内容区 */
+.iterations-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.iterations-empty {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+}
+
+/* 滚动条样式 */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
