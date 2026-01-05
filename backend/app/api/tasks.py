@@ -43,14 +43,9 @@ def check_project_access(db: Session, project_id: int, user: User) -> Project:
     return project
 
 
-def generate_task_number(db: Session, project: Project) -> str:
-    """Generate unique task number like PROJ-TASK-001"""
-    # 使用 project 的 task_seq 计数器
-    if not hasattr(project, 'task_seq') or project.task_seq is None:
-        project.task_seq = 0
-    project.task_seq += 1
-    db.flush()
-    return f"{project.key}-TASK-{project.task_seq:03d}"
+def generate_task_number(task_id: int) -> str:
+    """Generate unique task number using database ID (e.g., T1, T2, ...)"""
+    return f"T{task_id}"
 
 
 @router.get("/api/requirements/{requirement_id}/tasks", response_model=TaskListResponse)
@@ -103,11 +98,9 @@ def create_task(
 
     project = check_project_access(db, requirement.project_id, current_user)
 
-    task_number = generate_task_number(db, project)
-
     task = Task(
         requirement_id=requirement_id,
-        task_number=task_number,
+        task_number="TEMP",  # Will be updated after getting ID
         title=task_data.title,
         description=task_data.description,
         status=task_data.status,
@@ -116,6 +109,11 @@ def create_task(
         assignee_id=task_data.assignee_id,
     )
     db.add(task)
+    db.flush()  # Get the ID
+    
+    # Update task number using the database ID
+    task.task_number = generate_task_number(task.id)
+    
     db.commit()
     db.refresh(task)
     return task

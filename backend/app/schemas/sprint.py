@@ -38,6 +38,7 @@ class SprintUpdate(BaseModel):
 class SprintResponse(SprintBase):
     id: int
     project_id: int
+    sprint_number: Optional[str] = None
     status: SprintStatus
     created_at: datetime
     updated_at: datetime

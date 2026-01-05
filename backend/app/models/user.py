@@ -33,3 +33,4 @@ class User(Base):
     comments = relationship("BugComment", back_populates="user")
     requirement_comments = relationship("RequirementComment", back_populates="user")
     task_comments = relationship("TaskComment", back_populates="user")
+    created_testcases = relationship("TestCase", back_populates="creator", foreign_keys="TestCase.creator_id")

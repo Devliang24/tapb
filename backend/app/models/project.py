@@ -17,6 +17,8 @@ class Project(Base):
     bug_seq = Column(Integer, default=0, nullable=False)  # Bug sequence counter
     requirement_seq = Column(Integer, default=0, nullable=False)  # Requirement sequence counter
     task_seq = Column(Integer, default=0, nullable=False)  # Task sequence counter
+    testcase_seq = Column(Integer, default=0, nullable=False)  # TestCase sequence counter
+    sprint_seq = Column(Integer, default=0, nullable=False)  # Sprint sequence counter
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -27,6 +29,8 @@ class Project(Base):
     sprints = relationship("Sprint", back_populates="project", cascade="all, delete-orphan")
     requirements = relationship("Requirement", back_populates="project", cascade="all, delete-orphan")
     members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
+    testcases = relationship("TestCase", back_populates="project", cascade="all, delete-orphan")
+    testcase_categories = relationship("TestCaseCategory", back_populates="project", cascade="all, delete-orphan")
 
 
 class ProjectMember(Base):

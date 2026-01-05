@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Table, Button, Tag, Space, Select, message, Modal, Dropdown, Input } from 'antd';
+import { Table, Button, Tag, Space, Select, message, Modal, Dropdown, Input, Popover, Checkbox } from 'antd';
 import { 
   PlusOutlined, 
   FolderOutlined, 
@@ -13,7 +13,9 @@ import {
   MoreOutlined,
   EllipsisOutlined,
   SearchOutlined,
-  LinkOutlined
+  LinkOutlined,
+  FilterOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import requirementService from '../../services/requirementService';
@@ -55,21 +57,21 @@ const statusLabels = {
 };
 
 const priorityColors = {
-  high: 'red',
-  medium: 'orange',
-  low: 'blue',
-  HIGH: 'red',
-  MEDIUM: 'orange',
-  LOW: 'blue',
+  high: 'green',
+  medium: 'blue',
+  low: 'default',
+  HIGH: 'green',
+  MEDIUM: 'blue',
+  LOW: 'default',
 };
 
 const priorityLabels = {
-  high: '高',
-  medium: '中',
-  low: '低',
-  HIGH: '高',
-  MEDIUM: '中',
-  LOW: '低',
+  high: 'High',
+  medium: 'Middle',
+  low: 'Low',
+  HIGH: 'High',
+  MEDIUM: 'Middle',
+  LOW: 'Low',
 };
 
 const bugStatusColors = {
@@ -116,7 +118,18 @@ const taskStatusLabels = {
   DONE: '已完成',
 };
 
-const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onRequirementClick, onTaskClick, onBugClick, hideCreateButton = false }) => {
+const RequirementList = ({ 
+  projectId, 
+  sprintId, 
+  sprintName, 
+  onCreateClick, 
+  onRequirementClick, 
+  onTaskClick, 
+  onBugClick, 
+  hideCreateButton = false,
+  showQuickCreate = false,
+  category = 'all'
+}) => {
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -127,6 +140,8 @@ const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onReq
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
+  const [quickCreateTitle, setQuickCreateTitle] = useState('');
+  const [filterPopoverVisible, setFilterPopoverVisible] = useState(false);
   const queryClient = useQueryClient();
 
   const statusMenuItems = [
@@ -299,6 +314,29 @@ const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onReq
     queryClient.invalidateQueries(['requirements', projectId]);
   };
 
+  // 快速创建需求
+  const quickCreateMutation = useMutation({
+    mutationFn: (title) => requirementService.createRequirement(projectId, { 
+      title,
+      priority: 'medium',
+      status: 'draft',
+      sprint_id: sprintId || undefined
+    }),
+    onSuccess: () => {
+      message.success('需求创建成功！');
+      setQuickCreateTitle('');
+      queryClient.invalidateQueries(['requirements', projectId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '创建失败');
+    },
+  });
+
+  const handleQuickCreate = () => {
+    if (!quickCreateTitle.trim()) return;
+    quickCreateMutation.mutate(quickCreateTitle.trim());
+  };
+
   const treeData = reqData?.items?.map(req => {
     if (!sprintId) {
       return {
@@ -465,6 +503,37 @@ const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onReq
         );
       },
     },
+    // ID 列
+    {
+      title: 'ID',
+      key: 'id',
+      width: 120,
+      className: 'id-col',
+      render: (_, record) => {
+        if (record.type === 'story') {
+          return (
+            <div className="id-cell">
+              <span className="id-number">{record.number}</span>
+              <Tag color="blue" className="type-tag-small">STORY</Tag>
+            </div>
+          );
+        } else if (record.type === 'task') {
+          return (
+            <div className="id-cell">
+              <span className="id-number">{record.number}</span>
+              <Tag color="cyan" className="type-tag-small">TASK</Tag>
+            </div>
+          );
+        } else {
+          return (
+            <div className="id-cell">
+              <span className="id-number">{record.number}</span>
+              <Tag color="orange" className="type-tag-small">BUG</Tag>
+            </div>
+          );
+        }
+      },
+    },
     {
       title: sprintId ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -517,7 +586,6 @@ const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onReq
                   <span style={{ width: 8, display: 'inline-block' }} />
                 )
               ) : null}
-              <Tag color="blue" className="type-tag">STORY</Tag>
               <a 
                 className="story-title-link"
                 onClick={(e) => {
@@ -558,9 +626,8 @@ const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onReq
                   />
                 )
               ) : (
-<span style={{ width: 8, display: 'inline-block' }} />
+                <span style={{ width: 8, display: 'inline-block' }} />
               )}
-              <Tag color="cyan" className="type-tag">TASK</Tag>
               <a 
                 className="task-title-link"
                 onClick={(e) => {
@@ -568,7 +635,6 @@ const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onReq
                   if (onTaskClick) {
                     onTaskClick(record);
                   } else {
-                    // 兼容旧用法，如果没有传入 onTaskClick 则打开编辑表单
                     setSelectedTask(record);
                     setTaskFormVisible(true);
                   }
@@ -582,8 +648,7 @@ const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onReq
           const isUnderTask = record.key?.includes('task-bug-');
           return (
             <div className={`title-cell-indent ${isUnderTask ? 'level-2' : 'level-1'}`}>
-<span style={{ width: 8, display: 'inline-block' }} />
-              <Tag color="orange" className="type-tag">BUG</Tag>
+              <span style={{ width: 8, display: 'inline-block' }} />
               <a 
                 className="bug-title-link"
                 onClick={(e) => {

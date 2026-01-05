@@ -203,6 +203,7 @@ const DetailDrawer = ({
       className="detail-drawer"
       closable={false}
       destroyOnClose
+      styles={{ mask: { backgroundColor: 'transparent' } }}
     >
       {renderContent()}
     </Drawer>

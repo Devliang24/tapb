@@ -444,7 +444,7 @@ def get_or_create_system_user(db: Session) -> User:
         from app.utils.security import get_password_hash
         system_user = User(
             username="system",
-            email="system@tapb.local",
+            email="system@tapb.dev",
             password_hash=get_password_hash("system_internal_user_2026"),
             role="admin"
         )
@@ -483,7 +483,8 @@ def seed_example_spaces():
                 creator_id=system_user.id,
                 bug_seq=0,
                 requirement_seq=0,
-                task_seq=0
+                task_seq=0,
+                sprint_seq=0
             )
             db.add(project)
             db.flush()
@@ -493,6 +494,7 @@ def seed_example_spaces():
             for i, sprint_data in enumerate(space_data["sprints"]):
                 sprint = Sprint(
                     project_id=project.id,
+                    sprint_number="TEMP",  # Will be updated after getting ID
                     name=sprint_data["name"],
                     goal=f"{space_data['name']}项目{sprint_data['name']}目标",
                     status=sprint_data["status"],
@@ -501,14 +503,14 @@ def seed_example_spaces():
                 )
                 db.add(sprint)
                 db.flush()
+                sprint.sprint_number = f"S{sprint.id}"
                 sprint_map[i] = sprint
             
             # Create bugs
             for i, bug_data in enumerate(space_data["bugs"], 1):
-                project.bug_seq = i
                 bug = Bug(
                     project_id=project.id,
-                    bug_number=f"{project.key}-{str(i).zfill(3)}",
+                    bug_number="TEMP",  # Will be updated after getting ID
                     title=bug_data["title"],
                     description=f"## 问题描述\n{bug_data['title']}\n\n## 复现步骤\n1. 进入相关页面\n2. 执行相关操作\n3. 观察问题现象",
                     status=bug_data["status"],
@@ -518,13 +520,14 @@ def seed_example_spaces():
                     sprint_id=sprint_map.get(1, sprint_map[0]).id if sprint_map else None
                 )
                 db.add(bug)
+                db.flush()
+                bug.bug_number = f"B{bug.id}"
             
             # Create requirements
             for i, req_data in enumerate(space_data["requirements"], 1):
-                project.requirement_seq = i
                 requirement = Requirement(
                     project_id=project.id,
-                    requirement_number=f"{project.key}-REQ-{str(i).zfill(3)}",
+                    requirement_number="TEMP",  # Will be updated after getting ID
                     title=req_data["title"],
                     description=f"## 需求描述\n{req_data['title']}\n\n## 验收标准\n- 功能完整可用\n- 通过测试验证",
                     status=req_data["status"],
@@ -533,6 +536,8 @@ def seed_example_spaces():
                     sprint_id=sprint_map.get(i-1, sprint_map[0]).id if sprint_map else None
                 )
                 db.add(requirement)
+                db.flush()
+                requirement.requirement_number = f"R{requirement.id}"
             
             created_count += 1
             print(f"✅ Created space: {space_data['name']} ({space_data['key']})")

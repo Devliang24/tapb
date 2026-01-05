@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, projects, bugs, sprints, requirements, tasks, users, upload
+from app.api import auth, projects, bugs, sprints, requirements, tasks, users, upload, testcases
 
 app = FastAPI(title="TAPB - Bug Management System")
 
@@ -34,3 +34,4 @@ app.include_router(requirements.router)
 app.include_router(tasks.router)
 app.include_router(users.router)
 app.include_router(upload.router)
+app.include_router(testcases.router)

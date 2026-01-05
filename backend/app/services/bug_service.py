@@ -7,29 +7,17 @@ from app.models.user import User
 from app.schemas.bug import BugCreate, BugUpdate
 
 
-def generate_bug_number(db: Session, project_id: int) -> str:
-    """Generate bug number for project (e.g., PROJ-001)"""
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    # Increment bug sequence
-    project.bug_seq += 1
-    db.commit()
-    
-    # Format: PROJECT_KEY-SEQUENCE (e.g., PROJ-001)
-    return f"{project.key}-{project.bug_seq:03d}"
+def generate_bug_number(bug_id: int) -> str:
+    """Generate bug number using database ID (e.g., B1, B2, ...)"""
+    return f"B{bug_id}"
 
 
 def create_bug(db: Session, bug_data: BugCreate, creator: User) -> Bug:
     """Create a new bug"""
-    # Generate bug number
-    bug_number = generate_bug_number(db, bug_data.project_id)
-    
-    # Create bug
+    # Create bug with placeholder number first
     bug = Bug(
         project_id=bug_data.project_id,
-        bug_number=bug_number,
+        bug_number="TEMP",  # Will be updated after getting ID
         title=bug_data.title,
         description=bug_data.description,
         priority=bug_data.priority,
@@ -43,6 +31,11 @@ def create_bug(db: Session, bug_data: BugCreate, creator: User) -> Bug:
         status=BugStatus.NEW
     )
     db.add(bug)
+    db.flush()  # Get the ID
+    
+    # Update bug number using the database ID
+    bug.bug_number = generate_bug_number(bug.id)
+    
     db.commit()
     db.refresh(bug)
     

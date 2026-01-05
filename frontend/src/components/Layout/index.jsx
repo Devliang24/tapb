@@ -64,10 +64,11 @@ const Layout = ({ children }) => {
   const isProjectDetail = location.pathname.match(/^\/projects\/\d+$/);
   const isIterationsPage = location.pathname.match(/^\/projects\/\d+\/iterations$/);
   const isProjectSettings = location.pathname.match(/^\/projects\/\d+\/settings$/);
-  const isProjectPage = isProjectDetail || isIterationsPage || isProjectSettings;
+  const isTestCasesPage = location.pathname.match(/^\/projects\/\d+\/testcases$/);
+  const isProjectPage = isProjectDetail || isIterationsPage || isProjectSettings || isTestCasesPage;
   
   const searchParams = new URLSearchParams(location.search);
-  const activeTab = isIterationsPage ? 'iterations' : (searchParams.get('tab') || 'iterations');
+  const activeTab = isIterationsPage ? 'iterations' : isTestCasesPage ? 'testcases' : (searchParams.get('tab') || 'iterations');
 
   const currentProjectId = location.pathname.match(/\/projects\/(\d+)/)?.[1];
   const currentProject = projects?.find(p => String(p.id) === currentProjectId);
@@ -109,6 +110,8 @@ const Layout = ({ children }) => {
     
     if (key === 'iterations') {
       navigate(`/projects/${projectId}`);
+    } else if (key === 'testcases') {
+      navigate(`/projects/${projectId}/testcases`);
     } else {
       navigate(`/projects/${projectId}?tab=${key}`);
     }
@@ -118,6 +121,7 @@ const Layout = ({ children }) => {
     { key: 'iterations', label: '迭代' },
     { key: 'requirements', label: '需求' },
     { key: 'bugs', label: '缺陷' },
+    { key: 'testcases', label: '测试用例' },
   ];
 
   useEffect(() => {

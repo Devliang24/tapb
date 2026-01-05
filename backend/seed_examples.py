@@ -23,37 +23,28 @@ def seed_examples(project_id: int):
         print(f"📦 Seeding example data for project: {project.name} ({project.key})")
         
         # Create example sprints
-        sprints = [
-            Sprint(
-                project_id=project_id,
-                name="Sprint 1 - 基础功能开发",
-                goal="完成用户登录、注册等基础功能",
-                status=SprintStatus.COMPLETED,
-                start_date=date(2026, 1, 1),
-                end_date=date(2026, 1, 14),
-            ),
-            Sprint(
-                project_id=project_id,
-                name="Sprint 2 - 核心业务实现",
-                goal="实现项目管理、Bug追踪核心流程",
-                status=SprintStatus.ACTIVE,
-                start_date=date(2026, 1, 15),
-                end_date=date(2026, 1, 28),
-            ),
-            Sprint(
-                project_id=project_id,
-                name="Sprint 3 - 优化与测试",
-                goal="性能优化、单元测试、集成测试",
-                status=SprintStatus.PLANNING,
-                start_date=date(2026, 1, 29),
-                end_date=date(2026, 2, 11),
-            ),
+        sprint_configs = [
+            ("Sprint 1 - 基础功能开发", "完成用户登录、注册等基础功能", SprintStatus.COMPLETED, date(2026, 1, 1), date(2026, 1, 14)),
+            ("Sprint 2 - 核心业务实现", "实现项目管理、Bug追踪核心流程", SprintStatus.ACTIVE, date(2026, 1, 15), date(2026, 1, 28)),
+            ("Sprint 3 - 优化与测试", "性能优化、单元测试、集成测试", SprintStatus.PLANNING, date(2026, 1, 29), date(2026, 2, 11)),
         ]
         
-        for sprint in sprints:
+        sprints = []
+        for name, goal, status, start_date, end_date in sprint_configs:
+            sprint = Sprint(
+                project_id=project_id,
+                sprint_number="TEMP",  # Will be updated after getting ID
+                name=name,
+                goal=goal,
+                status=status,
+                start_date=start_date,
+                end_date=end_date,
+            )
             db.add(sprint)
+            db.flush()
+            sprint.sprint_number = f"S{sprint.id}"
+            sprints.append(sprint)
         
-        db.flush()
         print(f"✅ Created {len(sprints)} example sprints")
         
         # Get first user as creator
@@ -63,44 +54,29 @@ def seed_examples(project_id: int):
             print("❌ No user found, please create a user first")
             return
         
-        # Update project requirement_seq
-        project.requirement_seq = 3
-        
         # Create example requirements
-        requirements = [
-            Requirement(
-                project_id=project_id,
-                requirement_number=f"{project.key}-REQ-001",
-                title="用户登录功能",
-                description="支持用户名/密码登录，记住密码功能",
-                status=RequirementStatus.COMPLETED,
-                priority=RequirementPriority.HIGH,
-                creator_id=first_user.id,
-                sprint_id=sprints[0].id,
-            ),
-            Requirement(
-                project_id=project_id,
-                requirement_number=f"{project.key}-REQ-002",
-                title="Bug 列表筛选与搜索",
-                description="支持按状态、优先级、关键词筛选 Bug",
-                status=RequirementStatus.IN_PROGRESS,
-                priority=RequirementPriority.HIGH,
-                creator_id=first_user.id,
-                sprint_id=sprints[1].id,
-            ),
-            Requirement(
-                project_id=project_id,
-                requirement_number=f"{project.key}-REQ-003",
-                title="数据导出功能",
-                description="导出 Bug 列表为 Excel/CSV 格式",
-                status=RequirementStatus.DRAFT,
-                priority=RequirementPriority.MEDIUM,
-                creator_id=first_user.id,
-            ),
+        req_configs = [
+            ("用户登录功能", "支持用户名/密码登录，记住密码功能", RequirementStatus.COMPLETED, RequirementPriority.HIGH, sprints[0].id),
+            ("Bug 列表筛选与搜索", "支持按状态、优先级、关键词筛选 Bug", RequirementStatus.IN_PROGRESS, RequirementPriority.HIGH, sprints[1].id),
+            ("数据导出功能", "导出 Bug 列表为 Excel/CSV 格式", RequirementStatus.DRAFT, RequirementPriority.MEDIUM, None),
         ]
         
-        for req in requirements:
-            db.add(req)
+        requirements = []
+        for title, description, status, priority, sprint_id in req_configs:
+            requirement = Requirement(
+                project_id=project_id,
+                requirement_number="TEMP",  # Will be updated after getting ID
+                title=title,
+                description=description,
+                status=status,
+                priority=priority,
+                creator_id=first_user.id,
+                sprint_id=sprint_id,
+            )
+            db.add(requirement)
+            db.flush()
+            requirement.requirement_number = f"R{requirement.id}"
+            requirements.append(requirement)
         
         db.commit()
         print(f"✅ Created {len(requirements)} example requirements")

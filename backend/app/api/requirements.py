@@ -62,11 +62,9 @@ def check_requirement_permission(
             )
 
 
-def generate_requirement_number(db: Session, project: Project) -> str:
-    """Generate unique requirement number like PROJ-REQ-001"""
-    project.requirement_seq += 1
-    db.flush()
-    return f"{project.key}-REQ-{project.requirement_seq:03d}"
+def generate_requirement_number(req_id: int) -> str:
+    """Generate unique requirement number using database ID (e.g., R1, R2, ...)"""
+    return f"R{req_id}"
 
 
 @router.get(
@@ -234,12 +232,10 @@ def create_requirement(
         if not assignee:
             raise HTTPException(status_code=404, detail="Assignee not found")
 
-    requirement_number = generate_requirement_number(db, project)
-
     requirement = Requirement(
         project_id=project_id,
         sprint_id=req_data.sprint_id,
-        requirement_number=requirement_number,
+        requirement_number="TEMP",  # Will be updated after getting ID
         title=req_data.title,
         description=req_data.description,
         priority=req_data.priority,
@@ -247,6 +243,11 @@ def create_requirement(
         assignee_id=req_data.assignee_id,
     )
     db.add(requirement)
+    db.flush()  # Get the ID
+    
+    # Update requirement number using the database ID
+    requirement.requirement_number = generate_requirement_number(requirement.id)
+    
     db.commit()
     db.refresh(requirement)
     return requirement

@@ -9,6 +9,13 @@ from app.models.requirement import (
 from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.bug import Bug, BugStatus, BugPriority, BugSeverity, BugHistory
 from app.models.comment import BugComment, RequirementComment, TaskComment
+from app.models.testcase import (
+    TestCase,
+    TestCaseCategory,
+    TestCaseType,
+    TestCaseStatus,
+    TestCasePriority,
+)
 
 __all__ = [
     "User",
@@ -31,4 +38,9 @@ __all__ = [
     "BugComment",
     "RequirementComment",
     "TaskComment",
+    "TestCase",
+    "TestCaseCategory",
+    "TestCaseType",
+    "TestCaseStatus",
+    "TestCasePriority",
 ]

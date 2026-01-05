@@ -44,6 +44,11 @@ def check_sprint_permission(db: Session, sprint: Sprint, user: User, project: Pr
             )
 
 
+def generate_sprint_number(sprint_id: int) -> str:
+    """Generate unique sprint number using database ID (e.g., S1, S2, ...)"""
+    return f"S{sprint_id}"
+
+
 @router.get("/api/projects/{project_id}/sprints", response_model=SprintListResponse)
 def get_project_sprints(
     project_id: int,
@@ -77,15 +82,20 @@ def create_sprint(
     """Create a new sprint in a project"""
     project = check_project_access(db, project_id, current_user)
 
-    # Only project creator or member can create sprint
     sprint = Sprint(
         project_id=project_id,
+        sprint_number="TEMP",  # Will be updated after getting ID
         name=sprint_data.name,
         goal=sprint_data.goal,
         start_date=sprint_data.start_date,
         end_date=sprint_data.end_date,
     )
     db.add(sprint)
+    db.flush()  # Get the ID
+    
+    # Update sprint number using the database ID
+    sprint.sprint_number = generate_sprint_number(sprint.id)
+    
     db.commit()
     db.refresh(sprint)
     return sprint

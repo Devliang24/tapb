@@ -9,6 +9,7 @@ import ProjectBugs from './pages/ProjectBugs';
 import SprintIterations from './pages/SprintIterations';
 import Settings from './pages/Settings';
 import ProjectSettings from './pages/ProjectSettings';
+import ProjectTestCases from './pages/ProjectTestCases';
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ function App() {
               <Route path="/projects" element={<Navigate to="/" replace />} />
               <Route path="/projects/:projectId" element={<SprintIterations />} />
               <Route path="/projects/:projectId/iterations" element={<SprintIterations />} />
+              <Route path="/projects/:projectId/testcases" element={<ProjectTestCases />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/projects/:projectId/settings" element={<ProjectSettings />} />
             </Routes>

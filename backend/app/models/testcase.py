@@ -1,0 +1,71 @@
+from datetime import datetime
+import enum
+
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum
+from sqlalchemy.orm import relationship
+
+from app.database import Base
+
+
+class TestCaseType(str, enum.Enum):
+    FUNCTIONAL = "functional"      # 功能测试
+    PERFORMANCE = "performance"    # 性能测试
+    SECURITY = "security"          # 安全测试
+    COMPATIBILITY = "compatibility"  # 兼容性测试
+    SMOKE = "smoke"                # 冒烟测试
+    REGRESSION = "regression"      # 回归测试
+
+
+class TestCaseStatus(str, enum.Enum):
+    PASSED = "passed"              # 通过
+    FAILED = "failed"              # 不通过
+    NOT_EXECUTED = "not_executed"  # 未执行
+
+
+class TestCasePriority(str, enum.Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class TestCaseCategory(Base):
+    """测试用例目录"""
+    __tablename__ = "testcase_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    parent_id = Column(Integer, ForeignKey("testcase_categories.id"), nullable=True)
+    name = Column(String(100), nullable=False)
+    order = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    project = relationship("Project", back_populates="testcase_categories")
+    parent = relationship("TestCaseCategory", remote_side=[id], backref="children")
+    testcases = relationship("TestCase", back_populates="category")
+
+
+class TestCase(Base):
+    """测试用例"""
+    __tablename__ = "testcases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey("testcase_categories.id"), nullable=True, index=True)
+    case_number = Column(String(50), unique=True, nullable=False, index=True)  # e.g., "TC-001"
+    name = Column(String(200), nullable=False)
+    type = Column(Enum(TestCaseType), default=TestCaseType.FUNCTIONAL, nullable=False)
+    status = Column(Enum(TestCaseStatus), default=TestCaseStatus.NOT_EXECUTED, nullable=False)
+    priority = Column(Enum(TestCasePriority), default=TestCasePriority.MEDIUM, nullable=False)
+    precondition = Column(Text, nullable=True)       # 前置条件
+    steps = Column(Text, nullable=True)              # 测试步骤 (Markdown)
+    expected_result = Column(Text, nullable=True)    # 预期结果 (Markdown)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    project = relationship("Project", back_populates="testcases")
+    category = relationship("TestCaseCategory", back_populates="testcases")
+    creator = relationship("User", back_populates="created_testcases", foreign_keys=[creator_id])

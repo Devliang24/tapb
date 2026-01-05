@@ -18,6 +18,7 @@ class Sprint(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, index=True)
+    sprint_number = Column(String(50), unique=True, nullable=True, index=True)  # e.g., "S1"
     name = Column(String(100), nullable=False)
     goal = Column(Text)
     status = Column(Enum(SprintStatus), default=SprintStatus.PLANNING, nullable=False)

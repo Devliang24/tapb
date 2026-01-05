@@ -115,18 +115,18 @@
   gap: 6px;
 }
 
-/* 减少多选框列宽度 */
-.req-compact.tree-table .ant-table-selection-column {
+/* 减少多选框列宽度，参考缺陷页 32x45 */
+.req-compact .ant-table-selection-column {
   width: 32px !important;
   min-width: 32px !important;
   max-width: 32px !important;
   text-align: left !important;
-  padding: 10px 0 10px 8px !important;
+  padding: 10px 0 !important;
 }
 
-/* 复选框左贴边 */
-.req-compact .ant-table-selection {
-  margin-right: 0 !important;
+/* 覆盖 colgroup 宽度 */
+.req-compact .ant-table-selection-col {
+  width: 32px !important;
 }
 
 /* 仅在需求页减少标题列左边距 */
@@ -138,11 +138,11 @@
 /* 操作列（独立三点）样式，仅需求页 */
 .req-compact td.action-col,
 .req-compact th.action-col {
-  padding: 0 !important;
+  padding: 0 4px !important;
   text-align: center;
-  width: 24px !important;
-  min-width: 24px !important;
-  max-width: 24px !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
 }
 
 /* 需求页标题单元格内部间距更小 */
@@ -272,10 +272,11 @@
   height: 24px !important;
 }
 
-/* 更紧凑的三点按钮（配合 action-col 宽度 24px） */
+/* 更紧凑的三点按钮 */
 .req-compact .action-dot {
-  padding: 0 !important;
-  min-width: 24px !important;
+  padding: 0 2px !important;
+  min-width: 20px !important;
+  width: 20px !important;
 }
 
 .action-dot:hover {
