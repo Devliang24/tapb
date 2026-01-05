@@ -115,13 +115,19 @@
   gap: 6px;
 }
 
-/* 仅在需求页使用更紧凑的选择列样式 */
-.req-compact .ant-table-selection-column {
+/* 减少多选框列宽度 */
+.req-compact.tree-table .ant-table-selection-column {
   width: 32px !important;
   min-width: 32px !important;
   max-width: 32px !important;
   text-align: left !important;
-  padding: 10px 0 10px 8px !important; /* 左侧8px，右侧贴边 */
+  padding: 10px 0 10px 0 !important;
+}
+
+/* 复选框左贴边 */
+.req-compact .ant-table-selection {
+  margin-right: 0 !important;
+  padding-left: 4px;
 }
 
 /* 仅在需求页减少标题列左边距 */
@@ -133,11 +139,9 @@
 /* 操作列（独立三点）样式，仅需求页 */
 .req-compact td.action-col,
 .req-compact th.action-col {
-  padding: 0 !important; /* 贴边 */
-  text-align: left;
-  width: 20px !important; /* 更窄 */
-  min-width: 20px !important;
-  max-width: 20px !important;
+  padding: 0 !important;
+  text-align: center;
+  width: 24px;
 }
 
 /* 需求页标题单元格内部间距更小 */
@@ -267,9 +271,9 @@
   height: 24px !important;
 }
 
-/* 仅需求页更紧凑的操作按钮间距 */
+/* 更紧凑的三点按钮（配合 action-col 宽度 24px） */
 .req-compact .action-dot {
-  padding: 0 !important; /* 贴边 */
+  padding: 0 !important;
 }
 
 .action-dot:hover {

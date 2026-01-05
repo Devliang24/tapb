@@ -417,7 +417,7 @@ const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onReq
     {
       title: '',
       key: 'actions',
-      width: sprintId ? 28 : 24,
+      width: sprintId ? 24 : 24,
       className: 'action-col',
       render: (_, record) => {
         if (record.type !== 'story') return null;
