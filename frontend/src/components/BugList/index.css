@@ -30,13 +30,19 @@
   gap: 4px;
 }
 
-/* 减少多选框列宽度 */
+/* 复选框列样式 */
 .bug-table .ant-table-selection-column {
   width: 32px !important;
   min-width: 32px !important;
   max-width: 32px !important;
   text-align: left !important;
-  padding: 10px 0 10px 0 !important; /* 更紧凑 */
+  padding: 10px 0 10px 0 !important;
+}
+
+/* 复选框左贴边 */
+.bug-table .ant-table-selection {
+  margin-right: 0 !important;
+  padding-left: 4px;
 }
 
 /* 操作列（独立三点） */
@@ -44,13 +50,9 @@
 .bug-table th.action-col {
   padding: 0 !important;
   text-align: center;
-  width: 24px;
-}
-
-/* 标题列减少左边距 */
-.bug-table td.title-col,
-.bug-table th.title-col {
-  padding-left: 0 !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  max-width: 24px !important;
 }
 
 /* 类型标签样式 */
@@ -85,6 +87,7 @@
 /* 更紧凑的三点按钮（配合 action-col 宽度 24px） */
 .bug-table .action-dot {
   padding: 0 !important;
+  min-width: 24px !important;
 }
 
 .action-dot:hover {
