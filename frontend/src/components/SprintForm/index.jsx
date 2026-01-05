@@ -70,9 +70,10 @@ const SprintForm = ({ visible, onClose, projectId, sprint = null }) => {
 
   return (
     <Drawer
-      title={isEdit ? '编辑迭代' : '创建迭代'}
+      title={isEdit ? '编辑迭代' : '新建迭代'}
       open={visible}
       onClose={onClose}
+      closable={false}
       width={500}
       extra={
         <Space>
@@ -82,7 +83,7 @@ const SprintForm = ({ visible, onClose, projectId, sprint = null }) => {
             onClick={() => form.submit()}
             loading={createMutation.isPending || updateMutation.isPending}
           >
-            {isEdit ? '保存' : '创建'}
+            {isEdit ? '保存' : '新建'}
           </Button>
         </Space>
       }

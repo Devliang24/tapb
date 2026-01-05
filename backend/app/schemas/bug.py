@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel
 
-from app.models.bug import BugStatus, BugPriority, BugSeverity
+from app.models.bug import BugStatus, BugPriority, BugSeverity, BugEnvironment, BugCause
 
 
 class BugBase(BaseModel):
@@ -18,6 +18,8 @@ class BugCreate(BugBase):
     assignee_id: Optional[int] = None
     sprint_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    environment: Optional[BugEnvironment] = None
+    defect_cause: Optional[BugCause] = None
 
 
 class BugUpdate(BaseModel):
@@ -29,11 +31,21 @@ class BugUpdate(BaseModel):
     assignee_id: Optional[int] = None
     sprint_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    environment: Optional[BugEnvironment] = None
+    defect_cause: Optional[BugCause] = None
 
 
 class UserBrief(BaseModel):
     id: int
     username: str
+
+    class Config:
+        from_attributes = True
+
+
+class SprintBrief(BaseModel):
+    id: int
+    name: str
 
     class Config:
         from_attributes = True
@@ -48,10 +60,13 @@ class BugResponse(BugBase):
     status: BugStatus
     creator_id: int
     assignee_id: Optional[int] = None
+    environment: Optional[BugEnvironment] = None
+    defect_cause: Optional[BugCause] = None
     created_at: datetime
     updated_at: datetime
     creator: Optional[UserBrief] = None
     assignee: Optional[UserBrief] = None
+    sprint: Optional[SprintBrief] = None
 
     class Config:
         from_attributes = True
@@ -84,6 +99,15 @@ class BugBatchAssignUpdate(BugBatchRequest):
     assignee_id: int
 
 
+class RequirementBrief(BaseModel):
+    id: int
+    requirement_number: str
+    title: str
+
+    class Config:
+        from_attributes = True
+
+
 class BugDetailResponse(BugBase):
     id: int
     project_id: int
@@ -93,10 +117,14 @@ class BugDetailResponse(BugBase):
     status: BugStatus
     creator_id: int
     assignee_id: Optional[int] = None
+    environment: Optional[BugEnvironment] = None
+    defect_cause: Optional[BugCause] = None
     created_at: datetime
     updated_at: datetime
     creator: Optional[UserBrief] = None
     assignee: Optional[UserBrief] = None
+    requirement: Optional[RequirementBrief] = None
+    sprint: Optional[SprintBrief] = None
 
     class Config:
         from_attributes = True

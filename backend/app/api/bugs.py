@@ -5,7 +5,7 @@ from sqlalchemy import or_
 
 from app.database import get_db
 from app.models.user import User
-from app.models.bug import Bug, BugStatus, BugPriority
+from app.models.bug import Bug, BugStatus, BugPriority, BugHistory
 from app.models.project import ProjectMember
 from app.schemas.bug import (
     BugCreate, BugUpdate, BugResponse, BugListResponse, BugDetailResponse,
@@ -28,6 +28,8 @@ def get_bugs(
     project_id: Optional[int] = None,
     status: Optional[str] = None,
     priority: Optional[str] = None,
+    severity: Optional[str] = None,
+    sprint_id: Optional[int] = None,
     assignee_id: Optional[int] = None,
     creator_id: Optional[int] = None,
     search: Optional[str] = None,
@@ -53,6 +55,10 @@ def get_bugs(
         query = query.filter(Bug.status == status)
     if priority:
         query = query.filter(Bug.priority == priority)
+    if severity:
+        query = query.filter(Bug.severity == severity)
+    if sprint_id:
+        query = query.filter(Bug.sprint_id == sprint_id)
     if assignee_id:
         query = query.filter(Bug.assignee_id == assignee_id)
     if creator_id:
@@ -342,3 +348,39 @@ def delete_comment(
     db.delete(comment)
     db.commit()
     return None
+
+
+# History API
+@router.get("/{bug_id}/history")
+def get_bug_history(
+    bug_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get bug change history"""
+    bug = db.query(Bug).filter(Bug.id == bug_id).first()
+    if not bug:
+        raise HTTPException(status_code=404, detail="Bug not found")
+    
+    history = db.query(BugHistory).filter(
+        BugHistory.bug_id == bug_id
+    ).order_by(BugHistory.changed_at.desc()).all()
+    
+    # Build response with user info
+    result = []
+    for h in history:
+        user = db.query(User).filter(User.id == h.changed_by).first()
+        result.append({
+            "id": h.id,
+            "field": h.field,
+            "old_value": h.old_value,
+            "new_value": h.new_value,
+            "changed_by": h.changed_by,
+            "changed_at": h.changed_at.isoformat(),
+            "user": {
+                "id": user.id,
+                "username": user.username
+            } if user else None
+        })
+    
+    return result

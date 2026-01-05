@@ -1,4 +1,5 @@
 import { Progress, Avatar } from 'antd';
+import { EditOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import sprintService from '../../services/sprintService';
 import './index.css';
@@ -9,7 +10,7 @@ const iconColors = [
   '#eb2f96', '#13c2c2', '#fa541c', '#2f54eb'
 ];
 
-const SprintCard = ({ sprint, selected, onClick }) => {
+const SprintCard = ({ sprint, selected, onClick, onEdit }) => {
   const { data: stats } = useQuery({
     queryKey: ['sprintStats', sprint.id],
     queryFn: () => sprintService.getSprintStats(sprint.id),
@@ -33,11 +34,19 @@ const SprintCard = ({ sprint, selected, onClick }) => {
 
   const isActive = sprint.status === 'active' || sprint.status === 'in_progress';
 
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    onEdit?.(sprint);
+  };
+
   return (
     <div 
       className={`sprint-card ${selected ? 'selected' : ''}`}
       onClick={() => onClick?.(sprint)}
     >
+      <div className="sprint-card-actions">
+        <EditOutlined className="sprint-card-edit-icon" onClick={handleEdit} />
+      </div>
       {isActive && <div className="sprint-card-badge">当前</div>}
       <div className="sprint-card-body">
         <div className="sprint-card-icon">

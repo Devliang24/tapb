@@ -8,6 +8,7 @@ import SprintCard from '../components/SprintCard';
 import RequirementList from '../components/RequirementList';
 import RequirementForm from '../components/RequirementForm';
 import RequirementDetail from '../components/RequirementDetail';
+import TaskDetail from '../components/TaskDetail';
 import BugDetail from '../components/BugDetail';
 import BugList from '../components/BugList';
 import BugForm from '../components/BugForm';
@@ -23,8 +24,10 @@ const SprintIterations = () => {
   const [reqFormVisible, setReqFormVisible] = useState(false);
   const [editingReq, setEditingReq] = useState(null);
   const [detailReqId, setDetailReqId] = useState(null);
+  const [detailTaskId, setDetailTaskId] = useState(null);
   const [detailBugId, setDetailBugId] = useState(null);
   const [sprintFormVisible, setSprintFormVisible] = useState(false);
+  const [editingSprint, setEditingSprint] = useState(null);
   const [bugFormVisible, setBugFormVisible] = useState(false);
 
   const { data: sprintData, isLoading } = useQuery({
@@ -50,6 +53,11 @@ const SprintIterations = () => {
     setSelectedSprintId(sprint.id);
   };
 
+  const handleSprintEdit = (sprint) => {
+    setEditingSprint(sprint);
+    setSprintFormVisible(true);
+  };
+
   const handleReqClick = (req) => {
     setDetailReqId(req.id);
   };
@@ -58,6 +66,14 @@ const SprintIterations = () => {
     setDetailReqId(null);
     setEditingReq(req);
     setReqFormVisible(true);
+  };
+
+  const handleTaskClick = (task) => {
+    setDetailTaskId(task.id);
+  };
+
+  const handleTaskUpdate = () => {
+    queryClient.invalidateQueries(['requirements', parseInt(projectId)]);
   };
 
   const handleBugUpdate = () => {
@@ -75,6 +91,7 @@ const SprintIterations = () => {
             setReqFormVisible(true);
           }}
           onRequirementClick={handleReqClick}
+          onTaskClick={handleTaskClick}
           onBugClick={(bugId) => setDetailBugId(bugId)}
         />
       );
@@ -98,8 +115,10 @@ const SprintIterations = () => {
           <div className="sidebar-header">
             <Button 
               type="primary" 
-              icon={<PlusOutlined />}
-              onClick={() => setSprintFormVisible(true)}
+              onClick={() => {
+                setEditingSprint(null);
+                setSprintFormVisible(true);
+              }}
             >
               新建
             </Button>
@@ -116,6 +135,7 @@ const SprintIterations = () => {
                   sprint={sprint}
                   selected={selectedSprintId === sprint.id}
                   onClick={handleSprintClick}
+                  onEdit={handleSprintEdit}
                 />
               ))
             ) : (
@@ -131,11 +151,13 @@ const SprintIterations = () => {
             <RequirementList
               projectId={parseInt(projectId)}
               sprintId={selectedSprintId}
+              sprintName={sprintData?.items?.find(s => s.id === selectedSprintId)?.name}
               onCreateClick={() => {
                 setEditingReq(null);
                 setReqFormVisible(true);
               }}
               onRequirementClick={handleReqClick}
+              onTaskClick={handleTaskClick}
               onBugClick={(bugId) => setDetailBugId(bugId)}
             />
           ) : (
@@ -157,8 +179,12 @@ const SprintIterations = () => {
       {/* 模态框 */}
       <SprintForm
         visible={sprintFormVisible}
-        onClose={() => setSprintFormVisible(false)}
+        onClose={() => {
+          setSprintFormVisible(false);
+          setEditingSprint(null);
+        }}
         projectId={parseInt(projectId)}
+        sprint={editingSprint}
       />
 
       <RequirementForm
@@ -187,6 +213,13 @@ const SprintIterations = () => {
         onClose={() => setBugFormVisible(false)}
         onSuccess={handleBugUpdate}
         projectId={parseInt(projectId)}
+      />
+
+      <TaskDetail
+        taskId={detailTaskId}
+        visible={!!detailTaskId}
+        onClose={() => setDetailTaskId(null)}
+        onUpdate={handleTaskUpdate}
       />
 
       <BugDetail

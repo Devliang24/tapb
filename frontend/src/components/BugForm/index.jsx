@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import RichTextEditor from '../MarkdownEditor';
 import bugService from '../../services/bugService';
 import requirementService from '../../services/requirementService';
+import sprintService from '../../services/sprintService';
+import projectService from '../../services/projectService';
 
 const defaultDescription = `
 <h3>问题描述</h3>
@@ -19,10 +21,24 @@ const defaultDescription = `
 const BugForm = ({ visible, onClose, onSuccess, projectId }) => {
   const [form] = Form.useForm();
   const [description, setDescription] = useState(defaultDescription);
+  const [continueCreate, setContinueCreate] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { data: requirements } = useQuery({
     queryKey: ['requirements', projectId],
     queryFn: () => requirementService.getRequirements(projectId, { page: 1, page_size: 100 }),
+    enabled: !!projectId,
+  });
+
+  const { data: sprints } = useQuery({
+    queryKey: ['sprints', projectId],
+    queryFn: () => sprintService.getSprints(projectId),
+    enabled: !!projectId,
+  });
+
+  const { data: members } = useQuery({
+    queryKey: ['projectMembers', projectId],
+    queryFn: () => projectService.getProjectMembers(projectId),
     enabled: !!projectId,
   });
 
@@ -33,8 +49,10 @@ const BugForm = ({ visible, onClose, onSuccess, projectId }) => {
     }
   }, [visible, form]);
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (values, shouldContinue = false) => {
     try {
+      setLoading(true);
+      setContinueCreate(shouldContinue);
       const submitData = { ...values, description, project_id: projectId };
       console.log('提交的 Bug 数据:', submitData);
       await bugService.createBug(submitData);
@@ -42,23 +60,36 @@ const BugForm = ({ visible, onClose, onSuccess, projectId }) => {
       form.resetFields();
       setDescription(defaultDescription);
       onSuccess();
-      onClose();
+      if (!shouldContinue) {
+        onClose();
+      }
     } catch (error) {
       message.error(error.response?.data?.detail || '创建失败');
+    } finally {
+      setLoading(false);
+      setContinueCreate(false);
     }
+  };
+
+  const handleCreateAndContinue = () => {
+    form.validateFields().then((values) => {
+      handleSubmit(values, true);
+    });
   };
 
   return (
     <Drawer
-      title="创建 Bug"
+      title="新建 Bug"
       open={visible}
       onClose={onClose}
-      width={640}
+      closable={false}
+      width="55%"
       extra={
-        <div style={{ marginRight: -8 }}>
-          <Button type="text" onClick={onClose} style={{ padding: '4px 8px' }}>取消</Button>
-          <Button type="link" onClick={() => form.submit()} style={{ padding: '4px 8px' }}>创建</Button>
-        </div>
+        <Space>
+          <Button type="primary" onClick={() => form.submit()} loading={loading}>新建</Button>
+          <Button onClick={handleCreateAndContinue} loading={loading}>新建并继续</Button>
+          <Button onClick={onClose}>取消</Button>
+        </Space>
       }
     >
       <Form
@@ -75,7 +106,7 @@ const BugForm = ({ visible, onClose, onSuccess, projectId }) => {
         </Form.Item>
 
         <Row gutter={16}>
-          <Col span={8}>
+          <Col span={6}>
             <Form.Item
               name="priority"
               label="优先级"
@@ -90,7 +121,7 @@ const BugForm = ({ visible, onClose, onSuccess, projectId }) => {
               </Select>
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col span={6}>
             <Form.Item
               name="severity"
               label="严重程度"
@@ -106,13 +137,59 @@ const BugForm = ({ visible, onClose, onSuccess, projectId }) => {
               </Select>
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col span={6}>
+            <Form.Item
+              name="environment"
+              label="发现环境"
+            >
+              <Select placeholder="选择发现环境" allowClear>
+                <Select.Option value="development">开发环境</Select.Option>
+                <Select.Option value="testing">测试环境</Select.Option>
+                <Select.Option value="staging">预发环境</Select.Option>
+                <Select.Option value="production">生产环境</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={6}>
+            <Form.Item
+              name="defect_cause"
+              label="缺陷原因"
+            >
+              <Select placeholder="选择缺陷原因" allowClear>
+                <Select.Option value="code_error">代码错误</Select.Option>
+                <Select.Option value="design_defect">设计缺陷</Select.Option>
+                <Select.Option value="requirement_issue">需求问题</Select.Option>
+                <Select.Option value="config_error">配置错误</Select.Option>
+                <Select.Option value="environment">环境问题</Select.Option>
+                <Select.Option value="third_party">第三方问题</Select.Option>
+                <Select.Option value="other">其他</Select.Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={6}>
+            <Form.Item
+              name="sprint_id"
+              label="迭代"
+            >
+              <Select placeholder="选择迭代" allowClear>
+                {sprints?.items?.map(sprint => (
+                  <Select.Option key={sprint.id} value={sprint.id}>
+                    {sprint.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={6}>
             <Form.Item
               name="requirement_id"
               label="关联需求"
             >
               <Select
-                placeholder="选择关联的需求（可选）"
+                placeholder="选择关联需求"
                 allowClear
                 showSearch
                 optionFilterProp="children"
@@ -132,13 +209,17 @@ const BugForm = ({ visible, onClose, onSuccess, projectId }) => {
               </Select>
             </Form.Item>
           </Col>
-          <Col span={8}>
-            <Form.Item
+          <Col span={6}>
+<Form.Item
               name="assignee_id"
               label="处理人"
             >
               <Select placeholder="选择处理人" allowClear>
-                {/* 可以后续添加项目成员列表 */}
+                {members?.map((m) => (
+                  <Select.Option key={m.user_id} value={m.user_id}>
+                    {m.user?.username}
+                  </Select.Option>
+                ))}
               </Select>
             </Form.Item>
           </Col>

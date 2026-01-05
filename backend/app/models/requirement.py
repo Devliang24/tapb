@@ -56,5 +56,6 @@ class Requirement(Base):
     assignee = relationship("User", back_populates="assigned_requirements", foreign_keys=[assignee_id])
     developer = relationship("User", foreign_keys=[developer_id])
     tester = relationship("User", foreign_keys=[tester_id])
-    bugs = relationship("Bug", back_populates="requirement")
-    tasks = relationship("Task", back_populates="requirement")
+    bugs = relationship("Bug", back_populates="requirement", cascade="all, delete-orphan")
+    tasks = relationship("Task", back_populates="requirement", cascade="all, delete-orphan")
+    comments = relationship("RequirementComment", back_populates="requirement", cascade="all, delete-orphan")

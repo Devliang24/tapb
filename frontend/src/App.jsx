@@ -8,6 +8,7 @@ import ProjectDetail from './pages/ProjectDetail';
 import ProjectBugs from './pages/ProjectBugs';
 import SprintIterations from './pages/SprintIterations';
 import Settings from './pages/Settings';
+import ProjectSettings from './pages/ProjectSettings';
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ function App() {
               <Route path="/projects/:projectId" element={<SprintIterations />} />
               <Route path="/projects/:projectId/iterations" element={<SprintIterations />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/projects/:projectId/settings" element={<ProjectSettings />} />
             </Routes>
           </Layout>
         </Router>

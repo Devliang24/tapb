@@ -99,3 +99,8 @@ class BulkDeleteRequest(BaseModel):
 class BulkStatusUpdateRequest(BaseModel):
     requirement_ids: List[int]
     status: RequirementStatus
+
+
+class BulkSprintUpdateRequest(BaseModel):
+    requirement_ids: List[int]
+    sprint_id: Optional[int] = None  # None 表示取消关联

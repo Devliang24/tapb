@@ -14,6 +14,33 @@
   background: #fafbfc;
 }
 
+/* 编辑图标 - 悬停时显示在右下角 */
+.sprint-card-actions {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sprint-card:hover .sprint-card-actions {
+  opacity: 1;
+}
+
+.sprint-card-edit-icon {
+  color: #8c8c8c;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sprint-card-edit-icon:hover {
+  color: #1890ff;
+  background: #e6f7ff;
+}
+
 .sprint-card.selected {
   background: #e6f4ff;
   border-color: #91caff;
@@ -22,8 +49,8 @@
 /* "当前" 标签 */
 .sprint-card-badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 6px;
+  right: 6px;
   font-size: 11px;
   color: #52c41a;
   background: #f6ffed;

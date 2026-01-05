@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Table, Button, Tag, Select, Input, message, Modal } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { Table, Button, Tag, Select, Input, message, Modal, Dropdown } from 'antd';
+import { SearchOutlined, EllipsisOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import bugService from '../../services/bugService';
 import projectService from '../../services/projectService';
+import sprintService from '../../services/sprintService';
+import './index.css';
 
 const { confirm } = Modal;
 
@@ -55,6 +57,23 @@ const severityLabels = {
   trivial: '轻微',
 };
 
+const environmentLabels = {
+  development: '开发环境',
+  testing: '测试环境',
+  staging: '预发环境',
+  production: '生产环境',
+};
+
+const defectCauseLabels = {
+  code_error: '代码错误',
+  design_defect: '设计缺陷',
+  requirement_issue: '需求问题',
+  config_error: '配置错误',
+  environment: '环境问题',
+  third_party: '第三方问题',
+  other: '其他',
+};
+
 const BugList = ({ projectId, onCreateClick, onBugClick }) => {
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState('');
@@ -73,6 +92,12 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
     enabled: !!projectId,
   });
 
+  const { data: sprints } = useQuery({
+    queryKey: ['sprints', projectId],
+    queryFn: () => sprintService.getSprints(projectId),
+    enabled: !!projectId,
+  });
+
   const updateMutation = useMutation({
     mutationFn: ({ bugId, data }) => bugService.updateBug(bugId, data),
     onSuccess: () => {
@@ -81,6 +106,29 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
     },
     onError: (error) => {
       message.error(error.response?.data?.detail || '更新失败');
+    },
+  });
+
+  // 复制 Bug
+  const copyMutation = useMutation({
+    mutationFn: (bug) => bugService.createBug({
+      project_id: bug.project_id,
+      title: `${bug.title} (复制)`,
+      description: bug.description || '# 复制的描述\n',
+      priority: bug.priority,
+      severity: bug.severity,
+      assignee_id: bug.assignee_id || undefined,
+      sprint_id: bug.sprint_id || undefined,
+      requirement_id: bug.requirement_id || undefined,
+      environment: bug.environment || undefined,
+      defect_cause: bug.defect_cause || undefined,
+    }),
+    onSuccess: () => {
+      message.success('已复制');
+      queryClient.invalidateQueries(['bugs', projectId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '复制失败');
     },
   });
 
@@ -129,12 +177,39 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
 
   const columns = [
     {
+      title: '',
+      key: 'actions',
+      width: 24,
+      className: 'action-col',
+      render: (_, record) => {
+        const items = [
+          { key: 'copy', label: '复制', onClick: () => copyMutation.mutate(record) },
+          { key: 'delete', label: '删除', danger: true, onClick: () => handleDelete(record) },
+        ];
+        return (
+          <Dropdown menu={{ items }} trigger={['click']}>
+            <Button
+              type="text"
+              size="small"
+              className="action-dot"
+              icon={<EllipsisOutlined rotate={90} />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        );
+      },
+    },
+    {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
+      className: 'title-col',
       ellipsis: true,
       render: (text, record) => (
-        <a onClick={() => onBugClick?.(record.id)}>{text}</a>
+        <div className="bug-title-cell">
+          <Tag color="red" className="type-tag">BUG</Tag>
+          <a className="bug-title-link" onClick={() => onBugClick?.(record.id)}>{text}</a>
+        </div>
       ),
     },
     {
@@ -207,6 +282,81 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
       ),
     },
     {
+      title: '发现环境',
+      dataIndex: 'environment',
+      key: 'environment',
+      width: 110,
+      render: (environment, record) => (
+        <Select
+          size="small"
+          variant="borderless"
+          suffixIcon={null}
+          value={environment}
+          style={{ width: 100 }}
+          placeholder="未设置"
+          allowClear
+          onChange={(value) => handleFieldChange(record.id, 'environment', value)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {Object.entries(environmentLabels).map(([key, label]) => (
+            <Select.Option key={key} value={key}>
+              {label}
+            </Select.Option>
+          ))}
+        </Select>
+      ),
+    },
+    {
+      title: '缺陷原因',
+      dataIndex: 'defect_cause',
+      key: 'defect_cause',
+      width: 110,
+      render: (defect_cause, record) => (
+        <Select
+          size="small"
+          variant="borderless"
+          suffixIcon={null}
+          value={defect_cause}
+          style={{ width: 100 }}
+          placeholder="未设置"
+          allowClear
+          onChange={(value) => handleFieldChange(record.id, 'defect_cause', value)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {Object.entries(defectCauseLabels).map(([key, label]) => (
+            <Select.Option key={key} value={key}>
+              {label}
+            </Select.Option>
+          ))}
+        </Select>
+      ),
+    },
+    {
+      title: '迭代',
+      dataIndex: 'sprint',
+      key: 'sprint',
+      width: 120,
+      render: (sprint, record) => (
+        <Select
+          size="small"
+          variant="borderless"
+          suffixIcon={null}
+          value={record.sprint_id}
+          style={{ width: 110 }}
+          placeholder="未设置"
+          allowClear
+          onChange={(value) => handleFieldChange(record.id, 'sprint_id', value)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {sprints?.items?.map((s) => (
+            <Select.Option key={s.id} value={s.id}>
+              {s.name}
+            </Select.Option>
+          ))}
+        </Select>
+      ),
+    },
+    {
       title: '创建人',
       dataIndex: 'creator',
       key: 'creator',
@@ -245,66 +395,113 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
       width: 150,
       render: (date) => <span style={{ whiteSpace: 'nowrap' }}>{new Date(date).toLocaleString('zh-CN')}</span>,
     },
-    {
-      title: '操作',
-      key: 'action',
-      width: 80,
-      render: (_, record) => (
-        <Button type="link" size="small" onClick={() => handleDelete(record)}>
-          删除
-        </Button>
-      ),
-    },
   ];
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Select
-          placeholder="状态"
-          style={{ width: 120 }}
-          allowClear
-          onChange={(value) => setFilters({ ...filters, status: value })}
-        >
-          <Select.Option value="new">新建</Select.Option>
-          <Select.Option value="confirmed">已确认</Select.Option>
-          <Select.Option value="in_progress">处理中</Select.Option>
-          <Select.Option value="resolved">已解决</Select.Option>
-          <Select.Option value="closed">已关闭</Select.Option>
-        </Select>
+      <div className="toolbar">
+        <div className="toolbar-left">
+          <Input.Search
+            placeholder="搜索 Bug..."
+            style={{ width: 180 }}
+            allowClear
+            onSearch={setSearch}
+            enterButton={<SearchOutlined />}
+          />
 
-        <Select
-          placeholder="优先级"
-          style={{ width: 120 }}
-          allowClear
-          onChange={(value) => setFilters({ ...filters, priority: value })}
-        >
-          <Select.Option value="critical">紧急</Select.Option>
-          <Select.Option value="high">高</Select.Option>
-          <Select.Option value="medium">中</Select.Option>
-          <Select.Option value="low">低</Select.Option>
-        </Select>
+          <Select
+            placeholder="状态"
+            style={{ width: 100 }}
+            allowClear
+            value={filters.status}
+            onChange={(value) => setFilters({ ...filters, status: value })}
+          >
+            <Select.Option value="new">新建</Select.Option>
+            <Select.Option value="confirmed">已确认</Select.Option>
+            <Select.Option value="in_progress">处理中</Select.Option>
+            <Select.Option value="resolved">已解决</Select.Option>
+            <Select.Option value="closed">已关闭</Select.Option>
+            <Select.Option value="reopened">重新打开</Select.Option>
+          </Select>
 
-        <Input.Search
-          placeholder="搜索 Bug..."
-          style={{ width: 300 }}
-          onSearch={setSearch}
-          enterButton={<SearchOutlined />}
-        />
+          <Select
+            placeholder="优先级"
+            style={{ width: 90 }}
+            allowClear
+            value={filters.priority}
+            onChange={(value) => setFilters({ ...filters, priority: value })}
+          >
+            <Select.Option value="critical">紧急</Select.Option>
+            <Select.Option value="high">高</Select.Option>
+            <Select.Option value="medium">中</Select.Option>
+            <Select.Option value="low">低</Select.Option>
+          </Select>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <Select
+            placeholder="严重程度"
+            style={{ width: 100 }}
+            allowClear
+            value={filters.severity}
+            onChange={(value) => setFilters({ ...filters, severity: value })}
+          >
+            <Select.Option value="blocker">阻塞</Select.Option>
+            <Select.Option value="critical">严重</Select.Option>
+            <Select.Option value="major">主要</Select.Option>
+            <Select.Option value="minor">次要</Select.Option>
+            <Select.Option value="trivial">轻微</Select.Option>
+          </Select>
+
+          <Select
+            placeholder="迭代"
+            style={{ width: 120 }}
+            allowClear
+            value={filters.sprint_id}
+            onChange={(value) => setFilters({ ...filters, sprint_id: value })}
+          >
+            {sprints?.items?.map(s => (
+              <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
+            ))}
+          </Select>
+
+          <Select
+            placeholder="处理人"
+            style={{ width: 100 }}
+            allowClear
+            value={filters.assignee_id}
+            onChange={(value) => setFilters({ ...filters, assignee_id: value })}
+          >
+            {members?.map(m => (
+              <Select.Option key={m.user_id} value={m.user_id}>{m.user?.username}</Select.Option>
+            ))}
+          </Select>
+
+          <Select
+            placeholder="创建人"
+            style={{ width: 100 }}
+            allowClear
+            value={filters.creator_id}
+            onChange={(value) => setFilters({ ...filters, creator_id: value })}
+          >
+            {members?.map(m => (
+              <Select.Option key={m.user_id} value={m.user_id}>{m.user?.username}</Select.Option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="toolbar-actions">
           {selectedRowKeys.length > 0 && (
             <Button danger onClick={handleBatchDelete}>
               批量删除 ({selectedRowKeys.length})
             </Button>
           )}
           <Button type="primary" onClick={onCreateClick}>
-            创建 Bug
+            新建 Bug
           </Button>
         </div>
       </div>
 
       <Table
+        className="bug-table"
         rowSelection={{
           selectedRowKeys,
           onChange: setSelectedRowKeys,
@@ -313,7 +510,8 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
         dataSource={bugData?.items || []}
         loading={isLoading}
         rowKey="id"
-        scroll={{ x: 900 }}
+        scroll={{ x: 1200 }}
+        sticky={{ offsetHeader: 49 }}
         pagination={{
           current: page,
           pageSize: bugData?.page_size || 20,

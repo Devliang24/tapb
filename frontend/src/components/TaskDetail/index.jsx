@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input } from 'antd';
-import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input, DatePicker } from 'antd';
+import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, CodeOutlined, BugOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import DetailDrawer from '../DetailDrawer';
-import requirementService from '../../services/requirementService';
+import taskService from '../../services/taskService';
 import projectService from '../../services/projectService';
+import requirementService from '../../services/requirementService';
 import useAuthStore from '../../stores/authStore';
 import RichTextEditor from '../MarkdownEditor';
 import MarkdownRenderer from '../MarkdownRenderer';
 
 const statusOptions = [
-  { value: 'draft', label: '草稿', color: 'default' },
-  { value: 'approved', label: '已批准', color: 'blue' },
-  { value: 'in_progress', label: '进行中', color: 'purple' },
-  { value: 'completed', label: '已完成', color: 'green' },
-  { value: 'cancelled', label: '已取消', color: 'red' },
+  { value: 'todo', label: '待处理', color: 'default' },
+  { value: 'in_progress', label: '进行中', color: 'blue' },
+  { value: 'done', label: '已完成', color: 'green' },
 ];
 
 const priorityOptions = [
@@ -23,46 +23,62 @@ const priorityOptions = [
   { value: 'low', label: '低', color: 'blue' },
 ];
 
-const RequirementDetail = ({ requirementId, visible, onClose, onUpdate }) => {
+const TaskDetail = ({ taskId, visible, onClose, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
   const [editedStatus, setEditedStatus] = useState('');
   const [editedPriority, setEditedPriority] = useState('');
   const [editedAssigneeId, setEditedAssigneeId] = useState(null);
+  const [editedDeveloperId, setEditedDeveloperId] = useState(null);
+  const [editedTesterId, setEditedTesterId] = useState(null);
+  const [editedStartDate, setEditedStartDate] = useState(null);
+  const [editedEndDate, setEditedEndDate] = useState(null);
   const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentContent, setEditingCommentContent] = useState('');
   const queryClient = useQueryClient();
   const currentUser = useAuthStore(state => state.user);
 
-  const { data: requirement, isLoading } = useQuery({
-    queryKey: ['requirement', requirementId],
-    queryFn: () => requirementService.getRequirement(requirementId),
-    enabled: !!requirementId && visible,
+  const { data: task, isLoading } = useQuery({
+    queryKey: ['task', taskId],
+    queryFn: () => taskService.getTask(taskId),
+    enabled: !!taskId && visible,
   });
 
   const { data: comments, refetch: refetchComments } = useQuery({
-    queryKey: ['requirementComments', requirementId],
-    queryFn: () => requirementService.getComments(requirementId),
-    enabled: !!requirementId && visible,
+    queryKey: ['taskComments', taskId],
+    queryFn: () => taskService.getComments(taskId),
+    enabled: !!taskId && visible,
   });
 
-const { data: members } = useQuery({
-    queryKey: ['projectMembers', requirement?.project_id],
-    queryFn: () => projectService.getProjectMembers(requirement.project_id),
-    enabled: visible && !!requirement?.project_id,
+const { data: taskRequirement } = useQuery({
+    queryKey: ['taskRequirement', task?.requirement_id],
+    queryFn: () => requirementService.getRequirement(task.requirement_id),
+    enabled: !!task?.requirement_id && visible,
+  });
+
+  const projectId = taskRequirement?.project_id;
+
+  const { data: members } = useQuery({
+    queryKey: ['projectMembers', projectId],
+    queryFn: () => projectService.getProjectMembers(projectId),
+    enabled: !!projectId,
   });
 
   useEffect(() => {
-    if (requirement) {
-      setEditedTitle(requirement.title);
-      setEditedDescription(requirement.description || '');
-      setEditedStatus(requirement.status);
-      setEditedPriority(requirement.priority);
-      setEditedAssigneeId(requirement.assignee_id || null);
+    if (task) {
+      setEditedTitle(task.title);
+      setEditedDescription(task.description || '');
+      setEditedStatus(task.status?.toLowerCase() || 'todo');
+      setEditedPriority(task.priority?.toLowerCase() || 'medium');
+      setEditedAssigneeId(task.assignee_id || null);
+      setEditedDeveloperId(task.developer_id || null);
+      setEditedTesterId(task.tester_id || null);
+      setEditedStartDate(task.start_date || null);
+      setEditedEndDate(task.end_date || null);
     }
-  }, [requirement]);
+  }, [task]);
 
   useEffect(() => {
     if (!visible) {
@@ -74,10 +90,10 @@ const { data: members } = useQuery({
   }, [visible]);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => requirementService.updateRequirement(requirementId, data),
+    mutationFn: (data) => taskService.updateTask(taskId, data),
     onSuccess: () => {
       message.success('更新成功！');
-      queryClient.invalidateQueries(['requirement', requirementId]);
+      queryClient.invalidateQueries(['task', taskId]);
       setIsEditing(false);
       onUpdate?.();
     },
@@ -87,7 +103,7 @@ const { data: members } = useQuery({
   });
 
   const addCommentMutation = useMutation({
-    mutationFn: (content) => requirementService.addComment(requirementId, content),
+    mutationFn: (content) => taskService.addComment(taskId, content),
     onSuccess: () => {
       message.success('评论添加成功！');
       setNewComment('');
@@ -99,7 +115,7 @@ const { data: members } = useQuery({
   });
 
   const updateCommentMutation = useMutation({
-    mutationFn: ({ commentId, content }) => requirementService.updateComment(requirementId, commentId, content),
+    mutationFn: ({ commentId, content }) => taskService.updateComment(taskId, commentId, content),
     onSuccess: () => {
       message.success('评论更新成功！');
       setEditingCommentId(null);
@@ -112,7 +128,7 @@ const { data: members } = useQuery({
   });
 
   const deleteCommentMutation = useMutation({
-    mutationFn: (commentId) => requirementService.deleteComment(requirementId, commentId),
+    mutationFn: (commentId) => taskService.deleteComment(taskId, commentId),
     onSuccess: () => {
       message.success('评论删除成功！');
       refetchComments();
@@ -159,32 +175,60 @@ const { data: members } = useQuery({
       status: editedStatus,
       priority: editedPriority,
       assignee_id: editedAssigneeId,
+      developer_id: editedDeveloperId,
+      tester_id: editedTesterId,
+      start_date: editedStartDate,
+      end_date: editedEndDate,
     });
   };
 
   const handleCancelEdit = () => {
-    if (requirement) {
-      setEditedTitle(requirement.title);
-      setEditedDescription(requirement.description || '');
-      setEditedStatus(requirement.status);
-      setEditedPriority(requirement.priority);
-      setEditedAssigneeId(requirement.assignee_id || null);
+    if (task) {
+      setEditedTitle(task.title);
+      setEditedDescription(task.description || '');
+      setEditedStatus(task.status?.toLowerCase() || 'todo');
+      setEditedPriority(task.priority?.toLowerCase() || 'medium');
+      setEditedAssigneeId(task.assignee_id || null);
+      setEditedDeveloperId(task.developer_id || null);
+      setEditedTesterId(task.tester_id || null);
+      setEditedStartDate(task.start_date || null);
+      setEditedEndDate(task.end_date || null);
     }
     setIsEditing(false);
   };
 
   const getStatusTag = (status) => {
-    const opt = statusOptions.find(o => o.value === status);
+    const opt = statusOptions.find(o => o.value === status?.toLowerCase());
     return opt ? <Tag color={opt.color}>{opt.label}</Tag> : status;
   };
 
   const getPriorityTag = (priority) => {
-    const opt = priorityOptions.find(o => o.value === priority);
+    const opt = priorityOptions.find(o => o.value === priority?.toLowerCase());
     return opt ? <Tag color={opt.color}>{opt.label}</Tag> : priority;
   };
 
+// 用户选择器组件（使用空间成员）
+  const renderUserSelect = (value, onChange, placeholder) => (
+    <Select
+      value={value}
+      onChange={onChange}
+      style={{ width: '100%' }}
+      size="small"
+      placeholder={placeholder}
+      allowClear
+      showSearch
+      optionFilterProp="children"
+    >
+      {members?.map((m) => (
+        <Select.Option key={m.user_id} value={m.user_id}>
+          {m.user?.username}
+        </Select.Option>
+      ))}
+    </Select>
+  );
+
   // 构建右侧边栏信息
-  const sidebarItems = requirement ? [
+  const sidebarItems = task ? [
     {
       label: '状态',
       icon: <CheckCircleOutlined />,
@@ -196,7 +240,7 @@ const { data: members } = useQuery({
           size="small"
           options={statusOptions}
         />
-      ) : getStatusTag(requirement.status),
+      ) : getStatusTag(task.status),
     },
     {
       label: '优先级',
@@ -209,44 +253,59 @@ const { data: members } = useQuery({
           size="small"
           options={priorityOptions}
         />
-      ) : getPriorityTag(requirement.priority),
+      ) : getPriorityTag(task.priority),
     },
     {
-      label: '负责人',
+      label: '处理人',
       icon: <UserAddOutlined />,
+      value: isEditing
+        ? renderUserSelect(editedAssigneeId, setEditedAssigneeId, '选择处理人')
+        : (task.assignee?.username || '-'),
+    },
+    {
+      label: '开发者',
+      icon: <CodeOutlined />,
+      value: isEditing
+        ? renderUserSelect(editedDeveloperId, setEditedDeveloperId, '选择开发者')
+        : (task.developer?.username || '-'),
+    },
+    {
+      label: '测试人员',
+      icon: <BugOutlined />,
+      value: isEditing
+        ? renderUserSelect(editedTesterId, setEditedTesterId, '选择测试人员')
+        : (task.tester?.username || '-'),
+    },
+    {
+      label: '开始日期',
+      icon: <CalendarOutlined />,
       value: isEditing ? (
-        <Select
-          value={editedAssigneeId}
-          onChange={setEditedAssigneeId}
+        <DatePicker
+          value={editedStartDate ? dayjs(editedStartDate) : null}
+          onChange={(date) => setEditedStartDate(date ? date.format('YYYY-MM-DD') : null)}
           style={{ width: '100%' }}
           size="small"
-          placeholder="选择负责人"
-          allowClear
-          showSearch
-          optionFilterProp="children"
-        >
-{members?.map((m) => (
-            <Select.Option key={m.user_id} value={m.user_id}>
-              {m.user?.username}
-            </Select.Option>
-          ))}
-        </Select>
-      ) : (requirement.assignee?.username || '-'),
+          placeholder="选择开始日期"
+        />
+      ) : (task.start_date || '-'),
     },
     {
-      label: '创建人',
-      icon: <UserOutlined />,
-      value: requirement.creator?.username || '-',
-    },
-    {
-      label: '创建时间',
+      label: '结束日期',
       icon: <CalendarOutlined />,
-      value: new Date(requirement.created_at).toLocaleString('zh-CN'),
+      value: isEditing ? (
+        <DatePicker
+          value={editedEndDate ? dayjs(editedEndDate) : null}
+          onChange={(date) => setEditedEndDate(date ? date.format('YYYY-MM-DD') : null)}
+          style={{ width: '100%' }}
+          size="small"
+          placeholder="选择结束日期"
+        />
+      ) : (task.end_date || '-'),
     },
     {
       label: '更新时间',
       icon: <ClockCircleOutlined />,
-      value: new Date(requirement.updated_at).toLocaleString('zh-CN'),
+      value: new Date(task.updated_at).toLocaleString('zh-CN'),
     },
   ] : [];
 
@@ -273,7 +332,7 @@ const { data: members } = useQuery({
           />
         ) : (
           <div className="detail-drawer-description">
-            <MarkdownRenderer content={requirement?.description} />
+            <MarkdownRenderer content={task?.description} />
           </div>
         )}
       </div>
@@ -382,9 +441,9 @@ const { data: members } = useQuery({
     <DetailDrawer
       visible={visible}
       onClose={onClose}
-      title={requirement?.title}
-      number={requirement?.requirement_number}
-      status={requirement?.status}
+      title={task?.title}
+      number={task?.task_number}
+      status={task?.status?.toLowerCase()}
       statusOptions={statusOptions}
       onStatusChange={handleStatusChange}
       loading={isLoading}
@@ -400,4 +459,4 @@ const { data: members } = useQuery({
   );
 };
 
-export default RequirementDetail;
+export default TaskDetail;

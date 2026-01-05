@@ -31,6 +31,25 @@ class BugSeverity(str, enum.Enum):
     TRIVIAL = "trivial"
 
 
+class BugEnvironment(str, enum.Enum):
+    """发现环境"""
+    DEVELOPMENT = "development"  # 开发环境
+    TESTING = "testing"          # 测试环境
+    STAGING = "staging"          # 预发环境
+    PRODUCTION = "production"    # 生产环境
+
+
+class BugCause(str, enum.Enum):
+    """缺陷原因"""
+    CODE_ERROR = "code_error"           # 代码错误
+    DESIGN_DEFECT = "design_defect"     # 设计缺陷
+    REQUIREMENT_ISSUE = "requirement_issue"  # 需求问题
+    CONFIG_ERROR = "config_error"       # 配置错误
+    ENVIRONMENT = "environment"         # 环境问题
+    THIRD_PARTY = "third_party"         # 第三方问题
+    OTHER = "other"                     # 其他
+
+
 class Bug(Base):
     __tablename__ = "bugs"
 
@@ -47,6 +66,8 @@ class Bug(Base):
     severity = Column(Enum(BugSeverity), default=BugSeverity.MAJOR, nullable=False)
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    environment = Column(Enum(BugEnvironment), nullable=True)  # 发现环境
+    defect_cause = Column(Enum(BugCause), nullable=True)       # 缺陷原因
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -57,8 +78,8 @@ class Bug(Base):
     task = relationship("Task", back_populates="bugs")
     creator = relationship("User", back_populates="created_bugs", foreign_keys=[creator_id])
     assignee = relationship("User", back_populates="assigned_bugs", foreign_keys=[assignee_id])
-    comments = relationship("BugComment", back_populates="bug")
-    history = relationship("BugHistory", back_populates="bug")
+    comments = relationship("BugComment", back_populates="bug", cascade="all, delete-orphan")
+    history = relationship("BugHistory", back_populates="bug", cascade="all, delete-orphan")
 
 
 class BugHistory(Base):

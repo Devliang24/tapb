@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Table, Button, Tag, Space, Select, message, Modal, Dropdown } from 'antd';
+import { Table, Button, Tag, Space, Select, message, Modal, Dropdown, Input } from 'antd';
 import { 
   PlusOutlined, 
   FolderOutlined, 
@@ -11,14 +11,19 @@ import {
   DeleteOutlined,
   EditOutlined,
   MoreOutlined,
-  EllipsisOutlined
+  EllipsisOutlined,
+  SearchOutlined,
+  LinkOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import requirementService from '../../services/requirementService';
 import bugService from '../../services/bugService';
 import taskService from '../../services/taskService';
+import projectService from '../../services/projectService';
+import sprintService from '../../services/sprintService';
 import TaskForm from '../TaskForm';
 import BugForm from '../BugForm';
+import LinkRequirementsDrawer from '../LinkRequirementsDrawer';
 import './index.css';
 
 const { confirm } = Modal;
@@ -111,11 +116,13 @@ const taskStatusLabels = {
   DONE: '已完成',
 };
 
-const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClick, onBugClick, hideCreateButton = false }) => {
+const RequirementList = ({ projectId, sprintId, sprintName, onCreateClick, onRequirementClick, onTaskClick, onBugClick, hideCreateButton = false }) => {
   const [filters, setFilters] = useState({});
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [taskFormVisible, setTaskFormVisible] = useState(false);
   const [bugFormVisible, setBugFormVisible] = useState(false);
+  const [linkDrawerVisible, setLinkDrawerVisible] = useState(false);
   const [selectedStory, setSelectedStory] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -129,11 +136,26 @@ const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClic
     { key: 'cancelled', label: '已取消' },
   ];
 
+  // 获取空间成员
+  const { data: members } = useQuery({
+    queryKey: ['projectMembers', projectId],
+    queryFn: () => projectService.getProjectMembers(projectId),
+    enabled: !!projectId,
+  });
+
+  // 获取迭代列表（仅在非迭代页面使用）
+  const { data: sprints } = useQuery({
+    queryKey: ['sprints', projectId],
+    queryFn: () => sprintService.getSprints(projectId),
+    enabled: !!projectId && !sprintId,
+  });
+
   const { data: reqData, isLoading } = useQuery({
-    queryKey: ['requirements', projectId, sprintId, filters, page],
+    queryKey: ['requirements', projectId, sprintId, filters, search, page],
     queryFn: () => requirementService.getRequirements(projectId, { 
       ...filters, 
       sprint_id: sprintId,
+      search: search || undefined,
       page 
     }),
   });
@@ -264,6 +286,7 @@ const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClic
       setSelectedRowKeys(newSelectedRowKeys);
     },
     checkStrictly: false,
+    columnWidth: 32,
   };
 
   const toggleExpand = (key) => {
@@ -390,91 +413,110 @@ const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClic
   const isAllExpanded = expandedRowKeys.length > 0 && expandedRowKeys.length >= getAllExpandableKeys().length;
 
   const columns = [
+    // 操作列（独立三点）
     {
-      title: (
+      title: '',
+      key: 'actions',
+      width: sprintId ? 28 : 24,
+      className: 'action-col',
+      render: (_, record) => {
+        if (record.type !== 'story') return null;
+        const items = sprintId ? [
+          {
+            key: 'add-task',
+            label: '添加任务',
+            onClick: () => {
+              setSelectedStory(record);
+              setTaskFormVisible(true);
+            },
+          },
+          {
+            key: 'add-bug',
+            label: '新建 Bug',
+            onClick: () => {
+              setSelectedStory(record);
+              setBugFormVisible(true);
+            },
+          },
+          {
+            key: 'delete',
+            label: '删除',
+            danger: true,
+            onClick: () => handleDelete(record),
+          },
+        ] : [
+          {
+            key: 'delete',
+            label: '删除',
+            danger: true,
+            onClick: () => handleDelete(record),
+          },
+        ];
+        return (
+          <Dropdown menu={{ items }} trigger={['click']}>
+            <Button
+              type="text"
+              size="small"
+              className="action-dot"
+              icon={<EllipsisOutlined rotate={90} />}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Dropdown>
+        );
+      },
+    },
+    {
+      title: sprintId ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {isAllExpanded ? (
             <CaretDownOutlined 
-              rotate={90}
               style={{ cursor: 'pointer', color: '#8c8c8c' }}
               onClick={toggleExpandAll}
             />
           ) : (
             <CaretRightOutlined 
-              rotate={90}
               style={{ cursor: 'pointer', color: '#8c8c8c' }}
               onClick={toggleExpandAll}
             />
           )}
           <span>标题</span>
         </div>
-      ),
+      ) : '标题',
       key: 'title',
+      className: 'title-col',
       width: 400,
       ellipsis: true,
       render: (_, record) => {
         if (record.type === 'story') {
           const hasChildren = record.children && record.children.length > 0;
           const isExpanded = expandedRowKeys.includes(record.key);
-          const items = sprintId ? [
-            {
-              key: 'add-task',
-              label: '添加任务',
-              onClick: () => {
-                setSelectedStory(record);
-                setTaskFormVisible(true);
-              },
-            },
-            {
-              key: 'add-bug',
-              label: '新建 Bug',
-              onClick: () => {
-                setSelectedStory(record);
-                setBugFormVisible(true);
-              },
-            },
-            {
-              key: 'delete',
-              label: '删除',
-              danger: true,
-              onClick: () => handleDelete(record),
-            },
-          ] : [
-            {
-              key: 'delete',
-              label: '删除',
-              danger: true,
-              onClick: () => handleDelete(record),
-            },
-          ];
           return (
             <div className="title-cell">
-              <Dropdown menu={{ items }} trigger={['click']}>
-                <Button type="text" size="small" icon={<EllipsisOutlined rotate={90} />} className="action-dot" />
-              </Dropdown>
-              {hasChildren ? (
-                isExpanded ? (
-                  <CaretDownOutlined 
-                    rotate={90}
-                    className="expand-icon-inline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleExpand(record.key);
-                    }}
-                  />
+              {sprintId ? (
+                hasChildren ? (
+                  isExpanded ? (
+                    <CaretDownOutlined 
+                      rotate={90}
+                      className="expand-icon-inline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpand(record.key);
+                      }}
+                    />
+                  ) : (
+                    <CaretRightOutlined 
+                      rotate={90}
+                      className="expand-icon-inline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpand(record.key);
+                      }}
+                    />
+                  )
                 ) : (
-                  <CaretRightOutlined 
-                    rotate={90}
-                    className="expand-icon-inline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleExpand(record.key);
-                    }}
-                  />
+                  <span style={{ width: 8, display: 'inline-block' }} />
                 )
-              ) : (
-                <span style={{ width: 12, display: 'inline-block' }} />
-              )}
+              ) : null}
               <Tag color="blue" className="type-tag">STORY</Tag>
               <a 
                 className="story-title-link"
@@ -516,15 +558,20 @@ const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClic
                   />
                 )
               ) : (
-                <span style={{ width: 12, display: 'inline-block' }} />
+<span style={{ width: 8, display: 'inline-block' }} />
               )}
               <Tag color="cyan" className="type-tag">TASK</Tag>
               <a 
                 className="task-title-link"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setSelectedTask(record);
-                  setTaskFormVisible(true);
+                  if (onTaskClick) {
+                    onTaskClick(record);
+                  } else {
+                    // 兼容旧用法，如果没有传入 onTaskClick 则打开编辑表单
+                    setSelectedTask(record);
+                    setTaskFormVisible(true);
+                  }
                 }}
               >
                 {record.title}
@@ -535,7 +582,7 @@ const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClic
           const isUnderTask = record.key?.includes('task-bug-');
           return (
             <div className={`title-cell-indent ${isUnderTask ? 'level-2' : 'level-1'}`}>
-              <span style={{ width: 12, display: 'inline-block' }} />
+<span style={{ width: 8, display: 'inline-block' }} />
               <Tag color="orange" className="type-tag">BUG</Tag>
               <a 
                 className="bug-title-link"
@@ -644,55 +691,97 @@ const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClic
   return (
     <div>
       <div className="toolbar">
-        <Select
-          placeholder="状态筛选"
-          className="filter-select"
-          allowClear
-          value={filters.status}
-          onChange={(value) => setFilters({ ...filters, status: value })}
-        >
-          <Select.Option value="draft">草稿</Select.Option>
-          <Select.Option value="approved">已批准</Select.Option>
-          <Select.Option value="in_progress">进行中</Select.Option>
-          <Select.Option value="completed">已完成</Select.Option>
-          <Select.Option value="cancelled">已取消</Select.Option>
-        </Select>
-        
-        <Select
-          placeholder="优先级"
-          className="filter-select"
-          allowClear
-          value={filters.priority}
-          onChange={(value) => setFilters({ ...filters, priority: value })}
-        >
-          <Select.Option value="high">高</Select.Option>
-          <Select.Option value="medium">中</Select.Option>
-          <Select.Option value="low">低</Select.Option>
-        </Select>
-        
-        {selectedRowKeys.filter(k => k.startsWith('story-')).length > 0 && (
-          <Space>
-            <span style={{ color: '#1890ff', fontWeight: 500 }}>
-              已选 {selectedRowKeys.filter(k => k.startsWith('story-')).length} 项
-            </span>
-            <Dropdown menu={{ items: statusMenuItems, onClick: ({ key }) => handleBulkStatusChange(key) }} placement="bottomLeft">
-              <Button size="small">批量改状态</Button>
-            </Dropdown>
-            <Button size="small" danger onClick={handleBulkDelete}>批量删除</Button>
-          </Space>
-        )}
+        <div className="toolbar-left">
+          <Input.Search
+            placeholder={sprintId ? "搜索需求 / 任务 / 缺陷（标题或编号）" : "搜索需求标题..."}
+            style={{ width: sprintId ? 320 : 200 }}
+            allowClear
+            onSearch={setSearch}
+            onChange={(e) => setSearch(e.target.value)}
+            enterButton={<SearchOutlined />}
+          />
+
+          <Select
+            placeholder="状态"
+            style={{ width: 100 }}
+            allowClear
+            value={filters.status}
+            onChange={(value) => setFilters({ ...filters, status: value })}
+          >
+            <Select.Option value="draft">草稿</Select.Option>
+            <Select.Option value="approved">已批准</Select.Option>
+            <Select.Option value="in_progress">进行中</Select.Option>
+            <Select.Option value="completed">已完成</Select.Option>
+            <Select.Option value="cancelled">已取消</Select.Option>
+          </Select>
+          
+          <Select
+            placeholder="优先级"
+            style={{ width: 90 }}
+            allowClear
+            value={filters.priority}
+            onChange={(value) => setFilters({ ...filters, priority: value })}
+          >
+            <Select.Option value="high">高</Select.Option>
+            <Select.Option value="medium">中</Select.Option>
+            <Select.Option value="low">低</Select.Option>
+          </Select>
+
+          {!sprintId && (
+            <Select
+              placeholder="迭代"
+              style={{ width: 120 }}
+              allowClear
+              value={filters.sprint_id}
+              onChange={(value) => setFilters({ ...filters, sprint_id: value })}
+            >
+              {sprints?.items?.map(s => (
+                <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
+              ))}
+            </Select>
+          )}
+
+          <Select
+            placeholder="处理人"
+            style={{ width: 100 }}
+            allowClear
+            value={filters.assignee_id}
+            onChange={(value) => setFilters({ ...filters, assignee_id: value })}
+          >
+            {members?.map(m => (
+              <Select.Option key={m.user_id} value={m.user_id}>{m.user?.username}</Select.Option>
+            ))}
+          </Select>
+          
+          {selectedRowKeys.filter(k => k.startsWith('story-')).length > 0 && (
+            <Space>
+              <span style={{ color: '#1890ff', fontWeight: 500 }}>
+                已选 {selectedRowKeys.filter(k => k.startsWith('story-')).length} 项
+              </span>
+              <Dropdown menu={{ items: statusMenuItems, onClick: ({ key }) => handleBulkStatusChange(key) }} placement="bottomLeft">
+                <Button size="small">批量改状态</Button>
+              </Dropdown>
+              <Button size="small" danger onClick={handleBulkDelete}>批量删除</Button>
+            </Space>
+          )}
+        </div>
         
         {!hideCreateButton && (
           <div className="toolbar-actions">
             <Button type="primary" onClick={onCreateClick}>
-              创建需求
+              新建需求
             </Button>
+            {sprintId && (
+              <Button icon={<LinkOutlined />} onClick={() => setLinkDrawerVisible(true)}>
+                关联需求
+              </Button>
+            )}
           </div>
         )}
       </div>
       
       <Table
-        className="tree-table"
+        className={`tree-table ${!sprintId ? 'req-compact' : ''}`}
         columns={columns}
         dataSource={treeData}
         loading={isLoading}
@@ -703,7 +792,7 @@ const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClic
           if (record.type === 'task') return 'task-row';
           return 'bug-row';
         }}
-        tableLayout="fixed"
+        sticky={{ offsetHeader: 49 }}
         expandable={{
           expandedRowKeys,
           onExpand: (expanded, record) => toggleExpand(record.key),
@@ -741,6 +830,14 @@ const RequirementList = ({ projectId, sprintId, onCreateClick, onRequirementClic
         }}
         onSuccess={handleBugSuccess}
         projectId={projectId}
+      />
+
+      <LinkRequirementsDrawer
+        visible={linkDrawerVisible}
+        onClose={() => setLinkDrawerVisible(false)}
+        projectId={projectId}
+        sprintId={sprintId}
+        sprintName={sprintName}
       />
     </div>
   );

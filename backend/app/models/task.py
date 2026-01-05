@@ -52,4 +52,5 @@ class Task(Base):
     assignee = relationship("User", foreign_keys=[assignee_id])
     developer = relationship("User", foreign_keys=[developer_id])
     tester = relationship("User", foreign_keys=[tester_id])
-    bugs = relationship("Bug", back_populates="task")
+    bugs = relationship("Bug", back_populates="task", cascade="all, delete-orphan")
+    comments = relationship("TaskComment", back_populates="task", cascade="all, delete-orphan")

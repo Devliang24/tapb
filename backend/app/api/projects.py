@@ -1,10 +1,14 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.database import get_db
 from app.models.user import User
 from app.models.project import Project, ProjectMember
+from app.models.requirement import Requirement
+from app.models.task import Task
+from app.models.bug import Bug
 from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectMemberCreate, ProjectMemberResponse
 from app.utils.dependencies import get_current_user
 
@@ -289,3 +293,83 @@ def remove_project_member(
     db.delete(member)
     db.commit()
     return None
+
+
+@router.get("/{project_id}/search")
+def global_search(
+    project_id: int,
+    q: str = Query(..., min_length=1, description="搜索关键词"),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """全局搜索：同时搜索需求、任务、缺陷"""
+    project = db.query(Project).filter(Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    search_pattern = f"%{q}%"
+    
+    # 搜索需求
+    requirements = db.query(Requirement).filter(
+        Requirement.project_id == project_id,
+        or_(
+            Requirement.title.ilike(search_pattern),
+            Requirement.requirement_number.ilike(search_pattern),
+            Requirement.description.ilike(search_pattern)
+        )
+    ).limit(limit).all()
+    
+    # 搜索任务（通过需求关联项目）
+    req_ids = [r.id for r in db.query(Requirement.id).filter(Requirement.project_id == project_id).all()]
+    tasks = []
+    if req_ids:
+        tasks = db.query(Task).filter(
+            Task.requirement_id.in_(req_ids),
+            or_(
+                Task.title.ilike(search_pattern),
+                Task.task_number.ilike(search_pattern),
+                Task.description.ilike(search_pattern)
+            )
+        ).limit(limit).all()
+    
+    # 搜索缺陷
+    bugs = db.query(Bug).filter(
+        Bug.project_id == project_id,
+        or_(
+            Bug.title.ilike(search_pattern),
+            Bug.bug_number.ilike(search_pattern),
+            Bug.description.ilike(search_pattern)
+        )
+    ).limit(limit).all()
+    
+    return {
+        "requirements": [
+            {
+                "id": r.id,
+                "number": r.requirement_number,
+                "title": r.title,
+                "status": r.status.value if r.status else None,
+                "type": "requirement"
+            } for r in requirements
+        ],
+        "tasks": [
+            {
+                "id": t.id,
+                "number": t.task_number,
+                "title": t.title,
+                "status": t.status.value if t.status else None,
+                "requirement_id": t.requirement_id,
+                "type": "task"
+            } for t in tasks
+        ],
+        "bugs": [
+            {
+                "id": b.id,
+                "number": b.bug_number,
+                "title": b.title,
+                "status": b.status.value if b.status else None,
+                "type": "bug"
+            } for b in bugs
+        ]
+    }

@@ -28,4 +28,4 @@ class Sprint(Base):
 
     project = relationship("Project", back_populates="sprints")
     requirements = relationship("Requirement", back_populates="sprint")
-    bugs = relationship("Bug", back_populates="sprint")
+    bugs = relationship("Bug", back_populates="sprint", cascade="all, delete-orphan")

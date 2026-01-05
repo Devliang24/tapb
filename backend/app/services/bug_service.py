@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.models.bug import Bug, BugStatus, BugHistory
+from app.models.bug import Bug, BugStatus, BugHistory, BugEnvironment, BugCause
 from app.models.project import Project
 from app.models.user import User
 from app.schemas.bug import BugCreate, BugUpdate
@@ -38,6 +38,8 @@ def create_bug(db: Session, bug_data: BugCreate, creator: User) -> Bug:
         assignee_id=bug_data.assignee_id,
         sprint_id=bug_data.sprint_id,
         requirement_id=bug_data.requirement_id,
+        environment=bug_data.environment,
+        defect_cause=bug_data.defect_cause,
         status=BugStatus.NEW
     )
     db.add(bug)
@@ -96,6 +98,16 @@ def update_bug(db: Session, bug_id: int, bug_data: BugUpdate, user: User) -> Bug
         new_sprint = str(bug_data.sprint_id)
         changes.append(("sprint", old_sprint, new_sprint))
         bug.sprint_id = bug_data.sprint_id
+    
+    if bug_data.environment is not None and bug_data.environment != bug.environment:
+        old_env = bug.environment.value if bug.environment else "未设置"
+        changes.append(("environment", old_env, bug_data.environment.value))
+        bug.environment = bug_data.environment
+    
+    if bug_data.defect_cause is not None and bug_data.defect_cause != bug.defect_cause:
+        old_cause = bug.defect_cause.value if bug.defect_cause else "未设置"
+        changes.append(("defect_cause", old_cause, bug_data.defect_cause.value))
+        bug.defect_cause = bug_data.defect_cause
     
     db.commit()
     db.refresh(bug)

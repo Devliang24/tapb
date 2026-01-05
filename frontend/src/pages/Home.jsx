@@ -1,35 +1,58 @@
-import { Card, Typography } from 'antd';
+import { Button, Empty } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import useAuthStore from '../stores/authStore';
-
-const { Title, Paragraph } = Typography;
+import projectService from '../services/projectService';
 
 const Home = () => {
-  const { isAuthenticated, user } = useAuthStore();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
 
+  const { data: projects, isLoading } = useQuery({
+    queryKey: ['projects'],
+    queryFn: projectService.getProjects,
+    enabled: isAuthenticated,
+  });
+
+  // 如果已登录且有项目，自动跳转到第一个项目
+  if (isAuthenticated && projects?.length > 0 && !isLoading) {
+    const lastProjectId = localStorage.getItem('lastProjectId');
+    const targetProject = projects.find(p => String(p.id) === lastProjectId) || projects[0];
+    navigate(`/projects/${targetProject.id}/iterations`, { replace: true });
+    return null;
+  }
+
+  // 未登录或没有项目时显示空状态
   return (
-    <div>
-      <Card>
-        <Title level={2}>欢迎使用 TAPB Bug 管理系统</Title>
-        {isAuthenticated ? (
-          <Paragraph>
-            你好，{user?.username}！你可以开始管理项目和 Bug 了。
-          </Paragraph>
-        ) : (
-          <Paragraph>
-            请先登录或注册以使用系统功能。
-          </Paragraph>
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      height: 'calc(100vh - 100px)' 
+    }}>
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={
+          isAuthenticated 
+            ? "暂无空间，创建一个开始吧"
+            : "请先登录以使用系统"
+        }
+      >
+        {isAuthenticated && (
+          <Button 
+            type="primary" 
+            icon={<PlusOutlined />}
+            size="large"
+            onClick={() => {
+              // 触发 Layout 中的创建空间抽屉
+              window.dispatchEvent(new CustomEvent('openCreateSpace'));
+            }}
+          >
+            新建空间
+          </Button>
         )}
-        
-        <Title level={4}>系统功能</Title>
-        <ul>
-          <li>✅ 用户认证与权限管理</li>
-          <li>✅ 项目管理</li>
-          <li>✅ Bug 管理（创建、编辑、删除、状态流转）</li>
-          <li>✅ 批量操作</li>
-          <li>✅ 评论系统（支持 Markdown）</li>
-          <li>✅ 搜索与筛选</li>
-        </ul>
-      </Card>
+      </Empty>
     </div>
   );
 };

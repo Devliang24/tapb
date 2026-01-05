@@ -118,7 +118,7 @@ const SprintList = ({ projectId, onCreateClick, onSprintClick }) => {
 
         <div style={{ marginLeft: 'auto' }}>
           <Button type="primary" onClick={onCreateClick}>
-            创建迭代
+            新建迭代
           </Button>
         </div>
       </div>

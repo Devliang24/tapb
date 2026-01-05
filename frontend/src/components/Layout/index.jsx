@@ -6,7 +6,8 @@ import {
   AppstoreOutlined,
   StarFilled,
   SettingOutlined,
-  DownOutlined
+  DownOutlined,
+  PlusOutlined
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,7 +27,6 @@ const Layout = ({ children }) => {
   const { isAuthenticated, user, logout, setAuth } = useAuthStore();
   const [authModalVisible, setAuthModalVisible] = useState(false);
   const [createSpaceVisible, setCreateSpaceVisible] = useState(false);
-  const [spaceFilter, setSpaceFilter] = useState('recent');
   const [createForm] = Form.useForm();
   
   const { data: projects } = useQuery({
@@ -61,16 +61,10 @@ const Layout = ({ children }) => {
     createSpaceMutation.mutate(values);
   };
 
-  const filteredProjects = projects?.filter(project => {
-    if (spaceFilter === 'participated') {
-      return !project.is_public;
-    }
-    return true;
-  });
-
   const isProjectDetail = location.pathname.match(/^\/projects\/\d+$/);
   const isIterationsPage = location.pathname.match(/^\/projects\/\d+\/iterations$/);
-  const isProjectPage = isProjectDetail || isIterationsPage;
+  const isProjectSettings = location.pathname.match(/^\/projects\/\d+\/settings$/);
+  const isProjectPage = isProjectDetail || isIterationsPage || isProjectSettings;
   
   const searchParams = new URLSearchParams(location.search);
   const activeTab = isIterationsPage ? 'iterations' : (searchParams.get('tab') || 'iterations');
@@ -86,9 +80,16 @@ const Layout = ({ children }) => {
   }, [currentProjectId]);
 
   const handleSpaceMenuClick = () => {
+    // 优先跳转到上次访问的空间
     const lastProjectId = localStorage.getItem('lastProjectId');
     if (lastProjectId && projects?.some(p => String(p.id) === lastProjectId)) {
       navigate(`/projects/${lastProjectId}/iterations`);
+    } else if (projects?.length > 0) {
+      // 没有上次访问记录，跳转到第一个空间
+      navigate(`/projects/${projects[0].id}/iterations`);
+    } else {
+      // 没有空间，跳转到首页显示空状态
+      navigate('/');
     }
   };
 
@@ -134,46 +135,12 @@ const Layout = ({ children }) => {
     initializeUser();
   }, [user, setAuth, logout]);
 
-  const spaceContent = (
-    <div className="space-popover">
-      <div className="space-popover-header">
-        <span 
-          className={`space-header-title ${spaceFilter === 'recent' ? 'active' : ''}`}
-          onClick={() => setSpaceFilter('recent')}
-        >
-          最近访问空间
-        </span>
-        <span 
-          className="space-header-action create-btn"
-          onClick={() => setCreateSpaceVisible(true)}
-        >
-          + 创建
-        </span>
-        <span 
-          className={`space-header-action ${spaceFilter === 'participated' ? 'active' : ''}`}
-          onClick={() => setSpaceFilter('participated')}
-        >
-          我参与的
-        </span>
-      </div>
-      <div className="space-list-full">
-        {filteredProjects?.map((project, index) => (
-          <div 
-            key={project.id}
-            className={`space-item ${currentProjectId === String(project.id) ? 'active' : ''}`}
-            onClick={() => navigate(`/projects/${project.id}/iterations`)}
-          >
-            <span className="space-color-square" style={{ background: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6'][index % 5] }} />
-            <span className="space-name">{project.name}</span>
-            {currentProjectId === String(project.id) && <StarFilled className="space-star active" />}
-          </div>
-        ))}
-        {filteredProjects?.length === 0 && (
-          <div className="space-empty">暂无空间</div>
-        )}
-      </div>
-    </div>
-  );
+  // 监听打开创建空间抽屉的事件
+  useEffect(() => {
+    const handleOpenCreateSpace = () => setCreateSpaceVisible(true);
+    window.addEventListener('openCreateSpace', handleOpenCreateSpace);
+    return () => window.removeEventListener('openCreateSpace', handleOpenCreateSpace);
+  }, []);
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
@@ -233,19 +200,35 @@ const Layout = ({ children }) => {
           <Header className="project-header">
             <Dropdown
               menu={{
-                items: projects?.map((project, index) => ({
-                  key: project.id,
-                  label: (
-                    <div className="dropdown-space-item">
-                      <span className="dropdown-space-color" style={{ background: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6'][index % 5] }} />
-                      <span>{project.name}</span>
-                      {currentProjectId === String(project.id) && <StarFilled style={{ color: '#faad14', marginLeft: 'auto' }} />}
-                    </div>
-                  ),
-                  onClick: () => navigate(`/projects/${project.id}/iterations`),
-                })) || []
+                items: [
+                  ...(projects?.map((project, index) => ({
+                    key: project.id,
+                    label: (
+                      <div className="dropdown-space-item">
+                        <span className="dropdown-space-color" style={{ background: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6'][index % 5] }} />
+                        <span>{project.name}</span>
+                        {currentProjectId === String(project.id) && <StarFilled style={{ color: '#faad14', marginLeft: 'auto' }} />}
+                      </div>
+                    ),
+                    onClick: () => navigate(`/projects/${project.id}/iterations`),
+                  })) || []),
+                  { type: 'divider' },
+                  {
+                    key: 'create-space',
+                    label: (
+                      <div className="dropdown-space-item create-space-item">
+                        <PlusOutlined />
+                        <span>新建空间</span>
+                      </div>
+                    ),
+                    onClick: () => setCreateSpaceVisible(true),
+                  }
+                ]
               }}
               trigger={['click']}
+              placement="bottomLeft"
+              overlayClassName="header-space-dropdown"
+              align={{ offset: [-10, 0] }}
             >
               <div className="header-left space-dropdown-trigger">
                 <span className="space-title">{currentProject?.name || '空间'}</span>
@@ -256,7 +239,17 @@ const Layout = ({ children }) => {
               activeKey={activeTab}
               items={tabItems}
               onChange={handleTabChange}
-              className="project-tabs"
+              className={`project-tabs ${isProjectSettings ? 'settings-mode' : ''}`}
+              tabBarExtraContent={
+                <div className="tab-extra-right">
+                  <span 
+                    className={`tab-extra-item ${isProjectSettings ? 'active' : ''}`}
+                    onClick={() => navigate(`/projects/${currentProjectId}/settings`)}
+                  >
+                    设置
+                  </span>
+                </div>
+              }
             />
           </Header>
         )}
@@ -275,13 +268,14 @@ const Layout = ({ children }) => {
 
       {/* 创建空间抽屉 */}
       <Drawer
-        title="创建空间"
+        title="新建空间"
         placement="right"
         open={createSpaceVisible}
         onClose={() => {
           setCreateSpaceVisible(false);
           createForm.resetFields();
         }}
+        closable={false}
         width={400}
         styles={{ body: { paddingTop: 24 } }}
         footer={
@@ -295,7 +289,7 @@ const Layout = ({ children }) => {
               onClick={() => createForm.submit()}
               loading={createSpaceMutation.isPending}
             >
-              创建
+              新建
             </Button>
           </div>
         }

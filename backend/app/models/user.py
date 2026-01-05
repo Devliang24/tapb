@@ -31,3 +31,5 @@ class User(Base):
     created_requirements = relationship("Requirement", back_populates="creator", foreign_keys="Requirement.creator_id")
     assigned_requirements = relationship("Requirement", back_populates="assignee", foreign_keys="Requirement.assignee_id")
     comments = relationship("BugComment", back_populates="user")
+    requirement_comments = relationship("RequirementComment", back_populates="user")
+    task_comments = relationship("TaskComment", back_populates="user")

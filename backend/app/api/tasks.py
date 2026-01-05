@@ -15,6 +15,8 @@ from app.schemas.task import (
     TaskDetailResponse,
     TaskListResponse,
 )
+from app.schemas.comment import CommentCreate, CommentUpdate, TaskCommentResponse
+from app.models.comment import TaskComment
 from app.utils.dependencies import get_current_user
 
 router = APIRouter(tags=["tasks"])
@@ -176,5 +178,104 @@ def delete_task(
     check_project_access(db, requirement.project_id, current_user)
 
     db.delete(task)
+    db.commit()
+    return None
+
+
+# Comment APIs
+@router.get("/api/tasks/{task_id}/comments", response_model=list[TaskCommentResponse])
+def get_task_comments(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get comments for a task"""
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    requirement = db.query(Requirement).filter(Requirement.id == task.requirement_id).first()
+    check_project_access(db, requirement.project_id, current_user)
+    
+    comments = db.query(TaskComment).filter(
+        TaskComment.task_id == task_id
+    ).order_by(TaskComment.created_at.desc()).all()
+    return comments
+
+
+@router.post("/api/tasks/{task_id}/comments", response_model=TaskCommentResponse, status_code=status.HTTP_201_CREATED)
+def create_task_comment(
+    task_id: int,
+    comment_data: CommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Add a comment to a task"""
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    requirement = db.query(Requirement).filter(Requirement.id == task.requirement_id).first()
+    check_project_access(db, requirement.project_id, current_user)
+    
+    comment = TaskComment(
+        task_id=task_id,
+        user_id=current_user.id,
+        content=comment_data.content,
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return comment
+
+
+@router.put("/api/tasks/{task_id}/comments/{comment_id}", response_model=TaskCommentResponse)
+def update_task_comment(
+    task_id: int,
+    comment_id: int,
+    comment_data: CommentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update a task comment"""
+    comment = db.query(TaskComment).filter(
+        TaskComment.id == comment_id,
+        TaskComment.task_id == task_id
+    ).first()
+    
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    if comment.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only comment author can edit")
+    
+    if comment_data.content is not None:
+        comment.content = comment_data.content
+    
+    db.commit()
+    db.refresh(comment)
+    return comment
+
+
+@router.delete("/api/tasks/{task_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_task_comment(
+    task_id: int,
+    comment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a task comment"""
+    comment = db.query(TaskComment).filter(
+        TaskComment.id == comment_id,
+        TaskComment.task_id == task_id
+    ).first()
+    
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    if comment.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only comment author can delete")
+    
+    db.delete(comment)
     db.commit()
     return None

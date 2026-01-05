@@ -1,0 +1,63 @@
+.tiptap-wrapper {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  padding: 12px;
+  background: #fff;
+}
+
+.tiptap-wrapper .tiptap {
+  outline: none;
+  min-height: 150px;
+}
+
+.tiptap-wrapper .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #adb5bd;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+.tiptap-wrapper .tiptap p {
+  margin: 0 0 0.5em;
+}
+
+.tiptap-wrapper .tiptap h1,
+.tiptap-wrapper .tiptap h2,
+.tiptap-wrapper .tiptap h3 {
+  margin: 0.5em 0;
+}
+
+.tiptap-wrapper .tiptap ul,
+.tiptap-wrapper .tiptap ol {
+  padding-left: 1.5em;
+}
+
+.tiptap-wrapper .tiptap code {
+  background: #f4f4f5;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.tiptap-wrapper .tiptap pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.tiptap-wrapper .tiptap blockquote {
+  border-left: 3px solid #d9d9d9;
+  padding-left: 1em;
+  margin-left: 0;
+  color: #666;
+}
+
+.tiptap-wrapper .tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5em 0;
+}

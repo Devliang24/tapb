@@ -52,6 +52,14 @@ export const projectService = {
   removeProjectMember: async (projectId, memberId) => {
     await api.delete(`/api/projects/${projectId}/members/${memberId}`);
   },
+
+  // 全局搜索：同时搜索需求、任务、缺陷
+  globalSearch: async (projectId, query, limit = 10) => {
+    const response = await api.get(`/api/projects/${projectId}/search`, {
+      params: { q: query, limit }
+    });
+    return response.data;
+  },
 };
 
 export default projectService;

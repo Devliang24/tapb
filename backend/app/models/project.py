@@ -23,10 +23,10 @@ class Project(Base):
 
     # Relationships
     creator = relationship("User", back_populates="created_projects", foreign_keys=[creator_id])
-    bugs = relationship("Bug", back_populates="project")
-    sprints = relationship("Sprint", back_populates="project")
-    requirements = relationship("Requirement", back_populates="project")
-    members = relationship("ProjectMember", back_populates="project")
+    bugs = relationship("Bug", back_populates="project", cascade="all, delete-orphan")
+    sprints = relationship("Sprint", back_populates="project", cascade="all, delete-orphan")
+    requirements = relationship("Requirement", back_populates="project", cascade="all, delete-orphan")
+    members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
 
 
 class ProjectMember(Base):

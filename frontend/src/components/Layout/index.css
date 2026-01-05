@@ -209,7 +209,7 @@
 .project-header {
   background: var(--bg-white) !important;
   height: var(--header-height) !important;
-  padding: 0 24px !important;
+  padding: 0 24px 0 10px !important;
   border-bottom: 1px solid var(--border-color) !important;
   display: flex;
   align-items: center;
@@ -285,7 +285,7 @@
   color: var(--primary-color) !important;
 }
 
-.project-tabs .ant-tabs-tab-active {
+.project-tabs:not(.settings-mode) .ant-tabs-tab-active {
   color: var(--primary-color) !important;
   font-weight: 600;
   border-bottom-color: var(--primary-color) !important;
@@ -295,6 +295,43 @@
   background: var(--primary-color) !important;
   height: 2px !important;
 }
+
+.tab-extra-right {
+  margin-left: auto;
+}
+
+.tab-extra-item {
+  padding: 16px 16px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  position: relative;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-extra-item:hover {
+  color: var(--primary-color);
+}
+
+/* 设置tab的高亮样式（与迭代tab一致，使用边框线） */
+.tab-extra-item.active {
+  color: var(--primary-color);
+  font-weight: 600;
+  border-bottom-color: var(--primary-color);
+}
+
+/* Project Settings tab extra */
+.project-tabs.settings-mode .ant-tabs-tab-active, .project-tabs.settings-mode .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+/* 隐藏默认墨水条，使用自定义短下划线 */
+.project-tabs .ant-tabs-ink-bar {
+  display: none !important;
+}
+
+/* 去掉短下划线高亮样式（保持 ink-bar 已隐藏）*/
+.project-tabs .ant-tabs-tab .ant-tabs-tab-btn::after { display: none !important; }
 
 /* Main Layout */
 .main-layout {
@@ -353,13 +390,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
+  padding: 6px 12px 6px 0;
   border-radius: var(--radius-sm);
   transition: background var(--transition-fast);
 }
 
 .space-dropdown-trigger:hover {
-  background: var(--hover-bg);
+  background: transparent;
 }
 
 .space-dropdown-icon {
@@ -371,7 +408,75 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 200px;
+  min-width: 140px;
+}
+
+/* Header space dropdown */
+.header-space-dropdown {
+  padding-top: 0 !important;
+  margin-top: -4px !important;
+}
+
+.header-space-dropdown .ant-dropdown-menu {
+  margin-top: 0 !important;
+  min-width: 160px !important;
+  max-width: 200px !important;
+  max-height: 360px !important;
+  overflow-y: auto !important;
+  padding: 4px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12) !important;
+}
+
+.header-space-dropdown .ant-dropdown-menu-item {
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  margin: 2px 0 !important;
+  font-size: 13px !important;
+}
+
+.header-space-dropdown .ant-dropdown-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.header-space-dropdown .ant-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.header-space-dropdown .ant-dropdown-menu::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 2px;
+}
+
+.header-space-dropdown .ant-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: #c0c0c0;
+}
+
+.header-space-dropdown .dropdown-space-item {
+  min-width: auto;
+  gap: 8px;
+}
+
+.header-space-dropdown .dropdown-space-item span:not(.dropdown-space-color) {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.header-space-dropdown .dropdown-space-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.header-space-dropdown .create-space-item {
+  color: var(--primary-color);
+}
+
+.header-space-dropdown .create-space-item .anticon {
+  font-size: 12px;
 }
 
 .dropdown-space-color {

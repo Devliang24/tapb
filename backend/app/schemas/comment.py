@@ -38,6 +38,30 @@ class CommentResponse(CommentBase):
         from_attributes = True
 
 
+class RequirementCommentResponse(CommentBase):
+    id: int
+    requirement_id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    user: Optional[UserInfo] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TaskCommentResponse(CommentBase):
+    id: int
+    task_id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    user: Optional[UserInfo] = None
+
+    class Config:
+        from_attributes = True
+
+
 class CommentListResponse(BaseModel):
     items: List[CommentResponse]
     total: int

@@ -94,7 +94,7 @@ const ProjectDetail = () => {
 
   return (
     <div>
-      <Card>
+      <Card bodyStyle={{ padding: 0 }}>
         {renderContent()}
       </Card>
 

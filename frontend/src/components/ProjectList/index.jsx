@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Row, Col, Button, Typography, Tag, Empty, Modal, message } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, BugOutlined, UserOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, BugOutlined, UserOutlined, RightOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import projectService from '../../services/projectService';
-import ProjectFormModal from './ProjectFormModal';
+import ProjectFormDrawer from './ProjectFormModal';
 
 const { Title, Paragraph } = Typography;
 const { confirm } = Modal;
@@ -65,7 +65,7 @@ const ProjectList = () => {
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={2}>项目列表</Title>
         <Button type="primary" onClick={handleCreate}>
-          创建项目
+          新建项目
         </Button>
       </div>
 
@@ -74,7 +74,7 @@ const ProjectList = () => {
           description="还没有项目，创建一个开始吧"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         >
-          <Button type="primary" onClick={handleCreate}>创建项目</Button>
+          <Button type="primary" onClick={handleCreate}>新建项目</Button>
         </Empty>
       ) : (
         <Row gutter={[16, 16]}>
@@ -82,10 +82,17 @@ const ProjectList = () => {
             <Col xs={24} sm={12} lg={8} xl={6} key={project.id}>
               <Card
                 hoverable
-                onClick={() => navigate(`/projects/${project.id}`)}
+                onClick={() => navigate(`/projects/${project.id}/bugs`)}
                 actions={[
-                  <EditOutlined key="edit" onClick={(e) => { e.stopPropagation(); handleEdit(project); }} />,
-                  <DeleteOutlined key="delete" onClick={(e) => { e.stopPropagation(); handleDelete(project); }} />,
+                  <span key="edit" onClick={(e) => { e.stopPropagation(); handleEdit(project); }}>
+                    <EditOutlined /> 编辑
+                  </span>,
+                  <span key="delete" onClick={(e) => { e.stopPropagation(); handleDelete(project); }} style={{ color: '#ff4d4f' }}>
+                    <DeleteOutlined /> 删除
+                  </span>,
+                  <span key="enter" onClick={() => navigate(`/projects/${project.id}/bugs`)}>
+                    进入 <RightOutlined />
+                  </span>,
                 ]}
               >
                 <Card.Meta
@@ -97,15 +104,12 @@ const ProjectList = () => {
                   }
                   description={
                     <div>
-                      <Paragraph ellipsis={{ rows: 2 }} style={{ minHeight: 44 }}>
+                      <Paragraph ellipsis={{ rows: 2 }} style={{ minHeight: 44, marginBottom: 0 }}>
                         {project.description || '暂无描述'}
                       </Paragraph>
-                      <div style={{ marginTop: 12, display: 'flex', gap: 16 }}>
+                      <div style={{ marginTop: 12, display: 'flex', gap: 16, color: '#666' }}>
                         <span>
                           <BugOutlined /> {project.bug_seq} bugs
-                        </span>
-                        <span>
-                          <UserOutlined /> {project.creator_id}
                         </span>
                       </div>
                     </div>
@@ -117,7 +121,7 @@ const ProjectList = () => {
         </Row>
       )}
 
-      <ProjectFormModal
+      <ProjectFormDrawer
         visible={formVisible}
         onClose={() => setFormVisible(false)}
         onSuccess={handleFormSuccess}

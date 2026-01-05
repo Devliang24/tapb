@@ -1,0 +1,11 @@
+.link-drawer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.link-drawer-hint {
+  color: #8c8c8c;
+  font-size: 13px;
+}

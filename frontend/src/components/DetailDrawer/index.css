@@ -1,0 +1,361 @@
+/* DetailDrawer 通用详情抽屉样式 */
+
+.detail-drawer .ant-drawer-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-drawer .ant-drawer-body {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 头部样式 */
+.detail-drawer-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+
+.detail-drawer-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.detail-drawer-header-center {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-drawer-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.detail-drawer-title-input {
+  font-weight: 600;
+  font-size: 16px;
+  width: 100%;
+}
+
+.detail-drawer-number {
+  color: #666;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.detail-drawer-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 状态下拉框样式 */
+.detail-drawer-status-select {
+  border-radius: 16px !important;
+  border: 1px solid #1890ff !important;
+  background: #fff !important;
+  height: 28px !important;
+  min-width: 80px;
+}
+
+.detail-drawer-status-select .ant-select-selector {
+  border-radius: 16px !important;
+  border: none !important;
+  padding: 0 12px !important;
+  height: 26px !important;
+}
+
+.detail-drawer-status-select .ant-select-selection-item {
+  line-height: 26px !important;
+  padding-right: 16px !important;
+}
+
+.detail-drawer-status-select .ant-select-arrow {
+  right: 8px;
+  font-size: 10px;
+}
+
+/* 状态颜色 */
+.detail-drawer-status-select.status-blue {
+  border-color: #1890ff !important;
+  color: #1890ff;
+}
+.detail-drawer-status-select.status-blue .ant-select-selection-item {
+  color: #1890ff;
+}
+
+.detail-drawer-status-select.status-green {
+  border-color: #52c41a !important;
+  color: #52c41a;
+}
+.detail-drawer-status-select.status-green .ant-select-selection-item {
+  color: #52c41a;
+}
+
+.detail-drawer-status-select.status-red {
+  border-color: #ff4d4f !important;
+  color: #ff4d4f;
+}
+.detail-drawer-status-select.status-red .ant-select-selection-item {
+  color: #ff4d4f;
+}
+
+.detail-drawer-status-select.status-orange {
+  border-color: #fa8c16 !important;
+  color: #fa8c16;
+}
+.detail-drawer-status-select.status-orange .ant-select-selection-item {
+  color: #fa8c16;
+}
+
+.detail-drawer-status-select.status-purple {
+  border-color: #722ed1 !important;
+  color: #722ed1;
+}
+.detail-drawer-status-select.status-purple .ant-select-selection-item {
+  color: #722ed1;
+}
+
+.detail-drawer-status-select.status-default {
+  border-color: #d9d9d9 !important;
+  color: #666;
+}
+.detail-drawer-status-select.status-default .ant-select-selection-item {
+  color: #666;
+}
+
+/* 主体布局 */
+.detail-drawer-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 标签页区域 */
+.detail-drawer-tabs-wrapper {
+  padding: 0 24px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.detail-drawer-tabs {
+  margin-bottom: 0;
+}
+
+.detail-drawer-tabs .ant-tabs-nav {
+  margin-bottom: 0;
+}
+
+.detail-drawer-tabs .ant-tabs-tab {
+  padding: 12px 0;
+}
+
+.detail-drawer-tab-badge {
+  color: #999;
+  margin-left: 4px;
+  font-size: 12px;
+}
+
+.detail-drawer-toolbar-only {
+  padding: 12px 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 工具栏 */
+.detail-drawer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 内容区域 */
+.detail-drawer-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.detail-drawer-content.with-sidebar .detail-drawer-main {
+  flex: 1;
+  border-right: 1px solid #f0f0f0;
+}
+
+.detail-drawer-main {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* 右侧边栏 */
+.detail-drawer-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: #fafafa;
+  overflow-y: auto;
+}
+
+.detail-drawer-sidebar-title {
+  padding: 16px 20px 12px;
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-drawer-sidebar-content {
+  padding: 8px 0;
+}
+
+.detail-drawer-sidebar-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 20px;
+  font-size: 13px;
+}
+
+.detail-drawer-sidebar-label {
+  width: 80px;
+  flex-shrink: 0;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detail-drawer-sidebar-icon {
+  color: #999;
+  font-size: 14px;
+}
+
+.detail-drawer-sidebar-value {
+  flex: 1;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+/* 加载状态 */
+.detail-drawer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+}
+
+/* 内容区域通用样式 */
+.detail-drawer-section {
+  margin-bottom: 24px;
+}
+
+.detail-drawer-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-drawer-section-content {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+/* 描述内容样式 */
+.detail-drawer-description {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 16px;
+  min-height: 100px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.6;
+}
+
+.detail-drawer-description img {
+  max-width: 100%;
+  height: auto;
+}
+
+.detail-drawer-description pre {
+  overflow-x: auto;
+  max-width: 100%;
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.detail-drawer-description code {
+  background: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.detail-drawer-description ol,
+.detail-drawer-description ul {
+  padding-left: 24px;
+  margin: 8px 0;
+}
+
+.detail-drawer-description li {
+  margin: 4px 0;
+}
+
+/* 字段组样式 */
+.detail-drawer-field-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.detail-drawer-field {
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+}
+
+.detail-drawer-field-label {
+  color: #666;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.detail-drawer-field-value {
+  color: #1f2937;
+}
+
+/* 评论区域样式 */
+.detail-drawer-comments {
+  margin-top: 24px;
+}
+
+.detail-drawer-comment-input {
+  margin-bottom: 16px;
+}
+
+/* 响应式适配 */
+@media (max-width: 1200px) {
+  .detail-drawer-sidebar {
+    width: 240px;
+  }
+}

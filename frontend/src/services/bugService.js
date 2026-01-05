@@ -81,6 +81,12 @@ export const bugService = {
   deleteComment: async (bugId, commentId) => {
     await api.delete(`/api/bugs/${bugId}/comments/${commentId}`);
   },
+
+  // 获取操作历史
+  getHistory: async (bugId) => {
+    const response = await api.get(`/api/bugs/${bugId}/history`);
+    return response.data;
+  },
 };
 
 export default bugService;

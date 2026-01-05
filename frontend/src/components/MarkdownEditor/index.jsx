@@ -1,87 +1,94 @@
-import { useRef } from 'react';
-import { Editor } from '@tinymce/tinymce-react';
-import { message } from 'antd';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import Image from '@tiptap/extension-image';
+import { useEffect } from 'react';
 import uploadService from '../../services/uploadService';
-
-// 导入 TinyMCE 自托管文件
-import 'tinymce/tinymce';
-import 'tinymce/models/dom';
-import 'tinymce/themes/silver';
-import 'tinymce/icons/default';
-import 'tinymce/plugins/lists';
-import 'tinymce/plugins/link';
-import 'tinymce/plugins/image';
-import 'tinymce/plugins/table';
-import 'tinymce/plugins/code';
-import 'tinymce/plugins/codesample';
-import 'tinymce/plugins/fullscreen';
-import 'tinymce/plugins/autolink';
-import 'tinymce/plugins/autoresize';
+import './index.css';
 
 const RichTextEditor = ({ value, onChange, height = 300, placeholder }) => {
-  const editorRef = useRef(null);
-
-  // 图片上传处理
-  const handleImageUpload = async (blobInfo) => {
-    const hide = message.loading('图片上传中...', 0);
+  const handleImageUpload = async (file) => {
     try {
-      const file = blobInfo.blob();
       const result = await uploadService.uploadImage(file);
-      hide();
-      message.success('图片上传成功！');
-      return `http://localhost:8000${result.url}`;
+      return result.url;
     } catch (error) {
-      hide();
-      message.error('图片上传失败');
-      throw error;
+      console.error('图片上传失败:', error);
+      return null;
     }
   };
 
-  return (
-    <Editor
-      onInit={(evt, editor) => editorRef.current = editor}
-      value={value}
-      onEditorChange={(content) => onChange(content)}
-      init={{
-        height,
-        menubar: false,
-        placeholder: placeholder || '请输入内容，支持粘贴图片...',
-        plugins: [
-          'lists', 'link', 'image', 'table', 'code', 'codesample', 'fullscreen', 'autolink', 'autoresize'
-        ],
-        toolbar: 'undo redo | bold italic underline strikethrough | ' +
-          'forecolor backcolor | bullist numlist | ' +
-          'link image table codesample | code fullscreen',
-        content_style: `
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
-            font-size: 14px; 
-            line-height: 1.6;
-            padding: 8px;
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: placeholder || '支持 Markdown 快捷键，可粘贴图片...',
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+      }),
+    ],
+    content: value || '',
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        for (const item of items) {
+          if (item.type.startsWith('image/')) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file) {
+              handleImageUpload(file).then((url) => {
+                if (url && view.state.selection) {
+                  const { tr } = view.state;
+                  const node = view.state.schema.nodes.image.create({ src: url });
+                  view.dispatch(tr.replaceSelectionWith(node));
+                }
+              });
+            }
+            return true;
           }
-          img { max-width: 100%; height: auto; }
-          pre { background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; }
-          code { background: #f5f5f5; padding: 2px 4px; border-radius: 2px; }
-        `,
-        block_formats: 'Paragraph=p;',
-        formats: {
-          p: { block: 'p' }
-        },
-        images_upload_handler: handleImageUpload,
-        paste_data_images: true,
-        automatic_uploads: true,
-        file_picker_types: 'image',
-        branding: false,
-        promotion: false,
-        license_key: 'gpl',
-        skin: 'oxide',
-        skin_url: '/tinymce/skins/ui/oxide',
-        content_css: '/tinymce/skins/content/default/content.min.css',
-        statusbar: false,
-        min_height: 200,
-        max_height: 600,
-      }}
-    />
+        }
+        return false;
+      },
+      handleDrop: (view, event) => {
+        const files = event.dataTransfer?.files;
+        if (!files || files.length === 0) return false;
+
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+          event.preventDefault();
+          handleImageUpload(file).then((url) => {
+            if (url) {
+              const { tr } = view.state;
+              const node = view.state.schema.nodes.image.create({ src: url });
+              const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+              if (pos) {
+                view.dispatch(tr.insert(pos.pos, node));
+              }
+            }
+          });
+          return true;
+        }
+        return false;
+      },
+    },
+  });
+
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value || '');
+    }
+  }, [value, editor]);
+
+  return (
+    <div className="tiptap-wrapper" style={{ minHeight: height }}>
+      <EditorContent editor={editor} />
+    </div>
   );
 };
 

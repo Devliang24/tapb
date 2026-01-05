@@ -41,6 +41,38 @@ export const requirementService = {
     const response = await api.put('/api/requirements/bulk-status', { requirement_ids: requirementIds, status });
     return response.data;
   },
+
+  // 批量更新需求所属迭代
+  bulkUpdateSprint: async (requirementIds, sprintId) => {
+    const response = await api.put('/api/requirements/bulk-sprint', { 
+      requirement_ids: requirementIds, 
+      sprint_id: sprintId 
+    });
+    return response.data;
+  },
+
+  // 获取评论列表
+  getComments: async (requirementId) => {
+    const response = await api.get(`/api/requirements/${requirementId}/comments`);
+    return response.data;
+  },
+
+  // 添加评论
+  addComment: async (requirementId, content) => {
+    const response = await api.post(`/api/requirements/${requirementId}/comments`, { content });
+    return response.data;
+  },
+
+  // 更新评论
+  updateComment: async (requirementId, commentId, content) => {
+    const response = await api.put(`/api/requirements/${requirementId}/comments/${commentId}`, { content });
+    return response.data;
+  },
+
+  // 删除评论
+  deleteComment: async (requirementId, commentId) => {
+    await api.delete(`/api/requirements/${requirementId}/comments/${commentId}`);
+  },
 };
 
 export default requirementService;
