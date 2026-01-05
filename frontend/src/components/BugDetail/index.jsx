@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Space, Tag, List, Avatar, Input, message, Select, Popconfirm, Timeline, Empty } from 'antd';
-import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, LinkOutlined, HistoryOutlined, GlobalOutlined, BugOutlined, AimOutlined } from '@ant-design/icons';
+import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, LinkOutlined, HistoryOutlined, GlobalOutlined, BugOutlined, AimOutlined, SendOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DetailDrawer from '../DetailDrawer';
 import RichTextEditor from '../MarkdownEditor';
@@ -51,7 +51,7 @@ const defectCauseOptions = [
   { value: 'other', label: '其他' },
 ];
 
-const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId }) => {
+const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNext, hasPrev, hasNext }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('detail');
   const [editedTitle, setEditedTitle] = useState('');
@@ -427,12 +427,12 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId }) => {
             />
           </div>
           <Button
-            type="primary"
+            type="text"
+            icon={<SendOutlined />}
             onClick={handleAddComment}
             loading={addCommentMutation.isPending}
-          >
-            发表评论
-          </Button>
+            title="发表评论"
+          />
         </div>
         <List
           itemLayout="horizontal"
@@ -455,7 +455,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId }) => {
                   </Space>
                 ) : (
                   <Space key="actions">
-                    <Button size="small" onClick={() => handleEditComment(comment)}>编辑</Button>
+                    <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEditComment(comment)} title="编辑" />
                     <Popconfirm
                       title="删除评论"
                       description="确定要删除这条评论吗？"
@@ -463,7 +463,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId }) => {
                       okText="确定"
                       cancelText="取消"
                     >
-                      <Button size="small" danger loading={deleteCommentMutation.isPending}>删除</Button>
+                      <Button type="text" size="small" danger icon={<DeleteOutlined />} loading={deleteCommentMutation.isPending} title="删除" />
                     </Popconfirm>
                   </Space>
                 )
@@ -679,6 +679,10 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId }) => {
       saving={updateMutation.isPending}
       editedTitle={editedTitle}
       onTitleChange={setEditedTitle}
+      onPrev={onPrev}
+      onNext={onNext}
+      hasPrev={hasPrev}
+      hasNext={hasNext}
     />
   );
 };

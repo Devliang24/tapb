@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input, DatePicker } from 'antd';
-import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, CodeOutlined, BugOutlined } from '@ant-design/icons';
+import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input, DatePicker, Timeline, Empty } from 'antd';
+import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, CodeOutlined, BugOutlined, HistoryOutlined, SendOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import DetailDrawer from '../DetailDrawer';
@@ -25,6 +25,7 @@ const priorityOptions = [
 
 const TaskDetail = ({ taskId, visible, onClose, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('detail');
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
   const [editedStatus, setEditedStatus] = useState('');
@@ -58,6 +59,12 @@ const { data: taskRequirement } = useQuery({
     enabled: !!task?.requirement_id && visible,
   });
 
+  const { data: history } = useQuery({
+    queryKey: ['taskHistory', taskId],
+    queryFn: () => taskService.getHistory(taskId),
+    enabled: !!taskId && visible,
+  });
+
   const projectId = taskRequirement?.project_id;
 
   const { data: members } = useQuery({
@@ -83,6 +90,7 @@ const { data: taskRequirement } = useQuery({
   useEffect(() => {
     if (!visible) {
       setIsEditing(false);
+      setActiveTab('detail');
       setNewComment('');
       setEditingCommentId(null);
       setEditingCommentContent('');
@@ -312,17 +320,6 @@ const { data: taskRequirement } = useQuery({
   // 主内容区
   const renderMainContent = () => (
     <div>
-      {/* 标题编辑 */}
-      {isEditing && (
-        <div className="detail-drawer-section">
-          <Input
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            style={{ width: '100%' }}
-          />
-        </div>
-      )}
-
       <div className="detail-drawer-section">
         {isEditing ? (
           <RichTextEditor
@@ -350,12 +347,12 @@ const { data: taskRequirement } = useQuery({
             />
           </div>
           <Button
-            type="primary"
+            type="text"
+            icon={<SendOutlined />}
             onClick={handleAddComment}
             loading={addCommentMutation.isPending}
-          >
-            发表评论
-          </Button>
+            title="发表评论"
+          />
         </div>
         <List
           itemLayout="horizontal"
@@ -378,7 +375,7 @@ const { data: taskRequirement } = useQuery({
                   </Space>
                 ) : (
                   <Space key="actions">
-                    <Button size="small" onClick={() => handleEditComment(comment)}>编辑</Button>
+                    <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEditComment(comment)} title="编辑" />
                     <Popconfirm
                       title="删除评论"
                       description="确定要删除这条评论吗？"
@@ -386,7 +383,7 @@ const { data: taskRequirement } = useQuery({
                       okText="确定"
                       cancelText="取消"
                     >
-                      <Button size="small" danger loading={deleteCommentMutation.isPending}>删除</Button>
+                      <Button type="text" size="small" danger icon={<DeleteOutlined />} loading={deleteCommentMutation.isPending} title="删除" />
                     </Popconfirm>
                   </Space>
                 )
@@ -430,6 +427,118 @@ const { data: taskRequirement } = useQuery({
     </div>
   );
 
+  // 需求内容
+  const renderRequirementContent = () => (
+    <div>
+      {taskRequirement ? (
+        <div>
+          <div className="detail-drawer-section">
+            <div style={{ marginBottom: 8 }}>
+              <Tag color="blue">{taskRequirement.requirement_number}</Tag>
+              <span style={{ fontWeight: 500, marginLeft: 8 }}>{taskRequirement.title}</span>
+            </div>
+            <div className="detail-drawer-description">
+              <MarkdownRenderer content={taskRequirement.description} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <Empty description="未关联需求" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+      )}
+    </div>
+  );
+
+  // 字段名称映射
+  const fieldLabels = {
+    status: '状态',
+    priority: '优先级',
+    title: '标题',
+    description: '描述',
+    assignee_id: '处理人',
+    developer_id: '开发者',
+    tester_id: '测试人员',
+    start_date: '开始日期',
+    end_date: '结束日期',
+  };
+
+  const statusLabels = {
+    todo: '待处理',
+    in_progress: '进行中',
+    done: '已完成',
+  };
+
+  const priorityLabels = {
+    high: '高',
+    medium: '中',
+    low: '低',
+  };
+
+  const getReadableValue = (field, value) => {
+    if (!value || value === 'None') return '无';
+    if (field === 'status') return statusLabels[value] || value;
+    if (field === 'priority') return priorityLabels[value] || value;
+    return value;
+  };
+
+  // 操作历史内容
+  const renderHistoryContent = () => (
+    <div>
+      {history && history.length > 0 ? (
+        <Timeline
+          items={history.map((item) => ({
+            key: item.id,
+            dot: <HistoryOutlined style={{ fontSize: 16, color: '#1890ff' }} />,
+            children: (
+              <div>
+                <div style={{ color: '#666', fontSize: 12, marginBottom: 4 }}>
+                  {new Date(item.changed_at).toLocaleString('zh-CN')}
+                </div>
+                <div>
+                  <span style={{ fontWeight: 500, color: '#1890ff' }}>
+                    {item.user?.username || '系统'}
+                  </span>
+                  <span style={{ marginLeft: 8 }}>
+                    修改了 <strong>{fieldLabels[item.field] || item.field}</strong>
+                  </span>
+                </div>
+                <div style={{ marginTop: 4, fontSize: 13, color: '#666' }}>
+                  <span style={{ textDecoration: 'line-through', color: '#999' }}>
+                    {getReadableValue(item.field, item.old_value)}
+                  </span>
+                  <span style={{ margin: '0 8px' }}>→</span>
+                  <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                    {getReadableValue(item.field, item.new_value)}
+                  </span>
+                </div>
+              </div>
+            ),
+          }))}
+        />
+      ) : (
+        <Empty description="暂无操作历史" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+      )}
+    </div>
+  );
+
+  // 标签页配置
+  const tabs = [
+    {
+      key: 'detail',
+      label: '详细信息',
+      children: renderMainContent(),
+    },
+    {
+      key: 'requirement',
+      label: '需求',
+      children: renderRequirementContent(),
+    },
+    {
+      key: 'history',
+      label: '操作历史',
+      children: renderHistoryContent(),
+    },
+  ];
+
   // 状态快捷改变
   const handleStatusChange = (newStatus) => {
     updateMutation.mutate({
@@ -447,7 +556,9 @@ const { data: taskRequirement } = useQuery({
       statusOptions={statusOptions}
       onStatusChange={handleStatusChange}
       loading={isLoading}
-      mainContent={renderMainContent()}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
       sidebarItems={sidebarItems}
       editable={true}
       isEditing={isEditing}
@@ -455,6 +566,8 @@ const { data: taskRequirement } = useQuery({
       onSave={handleSave}
       onCancelEdit={handleCancelEdit}
       saving={updateMutation.isPending}
+      editedTitle={editedTitle}
+      onTitleChange={setEditedTitle}
     />
   );
 };

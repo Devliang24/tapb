@@ -1,28 +1,18 @@
 import { useState } from 'react';
-import { Table, Button, Tag, Space, Select, message, Modal, Dropdown, Input, Popover, Checkbox } from 'antd';
+import { Table, Button, Tag, Space, Select, message, Modal, Dropdown, Input } from 'antd';
 import { 
   PlusOutlined, 
-  FolderOutlined, 
-  FileTextOutlined, 
-  CheckSquareOutlined,
-  BugOutlined,
   CaretDownOutlined, 
   CaretRightOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  MoreOutlined,
   EllipsisOutlined,
   SearchOutlined,
-  LinkOutlined,
-  FilterOutlined,
-  SettingOutlined
+  LinkOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import requirementService from '../../services/requirementService';
-import bugService from '../../services/bugService';
+// import bugService from '../../services/bugService'; // 待后续 Bug 删除功能启用
 import taskService from '../../services/taskService';
 import projectService from '../../services/projectService';
-import sprintService from '../../services/sprintService';
 import TaskForm from '../TaskForm';
 import BugForm from '../BugForm';
 import LinkRequirementsDrawer from '../LinkRequirementsDrawer';
@@ -122,13 +112,13 @@ const RequirementList = ({
   projectId, 
   sprintId, 
   sprintName, 
+  categoryId,
   onCreateClick, 
   onRequirementClick, 
   onTaskClick, 
   onBugClick, 
   hideCreateButton = false,
   showQuickCreate = false,
-  category = 'all'
 }) => {
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState('');
@@ -141,7 +131,6 @@ const RequirementList = ({
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [expandedRowKeys, setExpandedRowKeys] = useState([]);
   const [quickCreateTitle, setQuickCreateTitle] = useState('');
-  const [filterPopoverVisible, setFilterPopoverVisible] = useState(false);
   const queryClient = useQueryClient();
 
   const statusMenuItems = [
@@ -158,18 +147,12 @@ const RequirementList = ({
     enabled: !!projectId,
   });
 
-  // 获取迭代列表（仅在非迭代页面使用）
-  const { data: sprints } = useQuery({
-    queryKey: ['sprints', projectId],
-    queryFn: () => sprintService.getSprints(projectId),
-    enabled: !!projectId && !sprintId,
-  });
-
   const { data: reqData, isLoading } = useQuery({
-    queryKey: ['requirements', projectId, sprintId, filters, search, page],
+    queryKey: ['requirements', projectId, sprintId, categoryId, filters, search, page],
     queryFn: () => requirementService.getRequirements(projectId, { 
       ...filters, 
       sprint_id: sprintId,
+      category_id: categoryId,
       search: search || undefined,
       page 
     }),
@@ -197,16 +180,17 @@ const RequirementList = ({
     });
   };
 
-  const bugDeleteMutation = useMutation({
-    mutationFn: bugService.deleteBug,
-    onSuccess: () => {
-      message.success('Bug 删除成功！');
-      queryClient.invalidateQueries(['requirements', projectId]);
-    },
-    onError: (error) => {
-      message.error(error.response?.data?.detail || 'Bug 删除失败');
-    },
-  });
+  // bugDeleteMutation 待后续支持 Bug 删除功能后启用
+  // const bugDeleteMutation = useMutation({
+  //   mutationFn: bugService.deleteBug,
+  //   onSuccess: () => {
+  //     message.success('Bug 删除成功！');
+  //     queryClient.invalidateQueries(['requirements', projectId]);
+  //   },
+  //   onError: (error) => {
+  //     message.error(error.response?.data?.detail || 'Bug 删除失败');
+  //   },
+  // });
 
   const bulkDeleteMutation = useMutation({
     mutationFn: requirementService.bulkDeleteRequirements,
@@ -503,37 +487,6 @@ const RequirementList = ({
         );
       },
     },
-    // ID 列
-    {
-      title: 'ID',
-      key: 'id',
-      width: 120,
-      className: 'id-col',
-      render: (_, record) => {
-        if (record.type === 'story') {
-          return (
-            <div className="id-cell">
-              <span className="id-number">{record.number}</span>
-              <Tag color="blue" className="type-tag-small">STORY</Tag>
-            </div>
-          );
-        } else if (record.type === 'task') {
-          return (
-            <div className="id-cell">
-              <span className="id-number">{record.number}</span>
-              <Tag color="cyan" className="type-tag-small">TASK</Tag>
-            </div>
-          );
-        } else {
-          return (
-            <div className="id-cell">
-              <span className="id-number">{record.number}</span>
-              <Tag color="orange" className="type-tag-small">BUG</Tag>
-            </div>
-          );
-        }
-      },
-    },
     {
       title: sprintId ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -553,7 +506,6 @@ const RequirementList = ({
       ) : '标题',
       key: 'title',
       className: 'title-col',
-      width: 400,
       ellipsis: true,
       render: (_, record) => {
         if (record.type === 'story') {
@@ -586,6 +538,7 @@ const RequirementList = ({
                   <span style={{ width: 8, display: 'inline-block' }} />
                 )
               ) : null}
+              <Tag color="blue" className="type-tag-small">STORY</Tag>
               <a 
                 className="story-title-link"
                 onClick={(e) => {
@@ -628,6 +581,7 @@ const RequirementList = ({
               ) : (
                 <span style={{ width: 8, display: 'inline-block' }} />
               )}
+              <Tag color="cyan" className="type-tag-small">TASK</Tag>
               <a 
                 className="task-title-link"
                 onClick={(e) => {
@@ -649,6 +603,7 @@ const RequirementList = ({
           return (
             <div className={`title-cell-indent ${isUnderTask ? 'level-2' : 'level-1'}`}>
               <span style={{ width: 8, display: 'inline-block' }} />
+              <Tag color="orange" className="type-tag-small">BUG</Tag>
               <a 
                 className="bug-title-link"
                 onClick={(e) => {
@@ -736,33 +691,25 @@ const RequirementList = ({
       },
     },
     {
-      title: '开始时间',
-      key: 'start_date',
-      width: 100,
+      title: '创建时间',
+      key: 'created_at',
+      width: 160,
       render: (_, record) => {
-        return record.start_date || '-';
-      },
-    },
-    {
-      title: '结束时间',
-      key: 'end_date',
-      width: 100,
-      render: (_, record) => {
-        return record.end_date || '-';
+        if (record.type !== 'story' || !record.created_at) return '-';
+        return new Date(record.created_at).toLocaleString('zh-CN');
       },
     },
   ];
 
   return (
-    <div>
+    <div className="requirement-list-wrapper">
       <div className="toolbar">
         <div className="toolbar-left">
           <Input.Search
-            placeholder={sprintId ? "搜索需求 / 任务 / 缺陷（标题或编号）" : "搜索需求标题..."}
-            style={{ width: sprintId ? 320 : 200 }}
+            placeholder="搜索需求..."
+            style={{ width: 180 }}
             allowClear
             onSearch={setSearch}
-            onChange={(e) => setSearch(e.target.value)}
             enterButton={<SearchOutlined />}
           />
 
@@ -779,7 +726,7 @@ const RequirementList = ({
             <Select.Option value="completed">已完成</Select.Option>
             <Select.Option value="cancelled">已取消</Select.Option>
           </Select>
-          
+
           <Select
             placeholder="优先级"
             style={{ width: 90 }}
@@ -787,24 +734,10 @@ const RequirementList = ({
             value={filters.priority}
             onChange={(value) => setFilters({ ...filters, priority: value })}
           >
-            <Select.Option value="high">高</Select.Option>
-            <Select.Option value="medium">中</Select.Option>
-            <Select.Option value="low">低</Select.Option>
+            <Select.Option value="high">High</Select.Option>
+            <Select.Option value="medium">Middle</Select.Option>
+            <Select.Option value="low">Low</Select.Option>
           </Select>
-
-          {!sprintId && (
-            <Select
-              placeholder="迭代"
-              style={{ width: 120 }}
-              allowClear
-              value={filters.sprint_id}
-              onChange={(value) => setFilters({ ...filters, sprint_id: value })}
-            >
-              {sprints?.items?.map(s => (
-                <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
-              ))}
-            </Select>
-          )}
 
           <Select
             placeholder="处理人"
@@ -817,36 +750,50 @@ const RequirementList = ({
               <Select.Option key={m.user_id} value={m.user_id}>{m.user?.username}</Select.Option>
             ))}
           </Select>
-          
+        </div>
+
+        <div className="toolbar-actions">
+          <span className="result-count">共 {reqData?.total || 0} 条</span>
           {selectedRowKeys.filter(k => k.startsWith('story-')).length > 0 && (
-            <Space>
-              <span style={{ color: '#1890ff', fontWeight: 500 }}>
-                已选 {selectedRowKeys.filter(k => k.startsWith('story-')).length} 项
-              </span>
+            <>
               <Dropdown menu={{ items: statusMenuItems, onClick: ({ key }) => handleBulkStatusChange(key) }} placement="bottomLeft">
-                <Button size="small">批量改状态</Button>
+                <Button>批量改状态 ({selectedRowKeys.filter(k => k.startsWith('story-')).length})</Button>
               </Dropdown>
-              <Button size="small" danger onClick={handleBulkDelete}>批量删除</Button>
-            </Space>
+              <Button danger onClick={handleBulkDelete}>
+                批量删除 ({selectedRowKeys.filter(k => k.startsWith('story-')).length})
+              </Button>
+            </>
+          )}
+          {!hideCreateButton && (
+            <Button type="primary" onClick={onCreateClick}>
+              创建需求
+            </Button>
+          )}
+          {sprintId && (
+            <Button icon={<LinkOutlined />} onClick={() => setLinkDrawerVisible(true)}>
+              关联需求
+            </Button>
           )}
         </div>
-        
-        {!hideCreateButton && (
-          <div className="toolbar-actions">
-            <Button type="primary" onClick={onCreateClick}>
-              新建需求
-            </Button>
-            {sprintId && (
-              <Button icon={<LinkOutlined />} onClick={() => setLinkDrawerVisible(true)}>
-                关联需求
-              </Button>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* 快速创建 */}
+      {showQuickCreate && (
+        <div className="quick-create-row">
+          <PlusOutlined className="quick-create-icon" />
+          <Input
+            className="quick-create-input"
+            placeholder="快速创建"
+            value={quickCreateTitle}
+            onChange={(e) => setQuickCreateTitle(e.target.value)}
+            onPressEnter={handleQuickCreate}
+            bordered={false}
+          />
+        </div>
+      )}
       
       <Table
-        className={`tree-table ${!sprintId ? 'req-compact' : ''}`}
+        className="tree-table"
         columns={columns}
         dataSource={treeData}
         loading={isLoading}

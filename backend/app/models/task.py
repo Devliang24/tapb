@@ -54,3 +54,20 @@ class Task(Base):
     tester = relationship("User", foreign_keys=[tester_id])
     bugs = relationship("Bug", back_populates="task", cascade="all, delete-orphan")
     comments = relationship("TaskComment", back_populates="task", cascade="all, delete-orphan")
+    history = relationship("TaskHistory", back_populates="task", cascade="all, delete-orphan")
+
+
+class TaskHistory(Base):
+    """任务操作历史"""
+    __tablename__ = "task_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
+    field = Column(String(50), nullable=False)
+    old_value = Column(String(255))
+    new_value = Column(String(255))
+    changed_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    changed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    task = relationship("Task", back_populates="history")
+    user = relationship("User")

@@ -1,27 +1,43 @@
-/* 工具栏样式 */
-.toolbar {
-  padding: 0 0 12px 0;
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid #f0f0f0;
+/* 包装容器 */
+.bug-list-wrapper {
+  padding: 0;
+  margin-top: -8px;
   background: #fff;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  height: 100%;
+  overflow: auto;
 }
 
-.toolbar-left {
+/* 去掉顶部边框线 */
+.bug-list-wrapper .ant-table-wrapper {
+  border-top: none;
+}
+
+/* 工具栏样式 - 与 RequirementList 保持一致 */
+.bug-list-wrapper .toolbar {
   display: flex;
-  gap: 12px;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bug-list-wrapper .toolbar-left {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.toolbar-actions {
+.bug-list-wrapper .toolbar-actions {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.bug-list-wrapper .result-count {
+  color: #8c8c8c;
+  font-size: 13px;
+  margin-right: 8px;
 }
 
 .bug-title-cell {
@@ -30,39 +46,25 @@
   gap: 4px;
 }
 
-/* 复选框列样式 */
-.bug-table .ant-table-selection-column {
-  width: 32px !important;
-  min-width: 32px !important;
-  max-width: 32px !important;
-  text-align: left !important;
-  padding: 10px 0 10px 0 !important;
-}
-
-/* 复选框左贴边 */
-.bug-table .ant-table-selection {
-  margin-right: 0 !important;
-  padding-left: 4px;
+/* 复选框列样式 - 与测试用例保持一致 */
+.bug-table .ant-table-cell {
+  padding: 10px 8px !important;
 }
 
 /* 操作列（独立三点） */
-.bug-table td.action-col,
-.bug-table th.action-col {
-  padding: 0 !important;
-  text-align: center;
-  width: 24px !important;
-  min-width: 24px !important;
-  max-width: 24px !important;
+.bug-table .action-col {
+  padding: 0 4px !important;
 }
 
-/* 类型标签样式 */
+/* 类型标签样式 - 与 RequirementList 保持一致 */
 .type-tag {
   font-size: 10px !important;
-  padding: 0 6px !important;
-  line-height: 18px !important;
-  border-radius: 3px !important;
-  font-weight: 600;
+  padding: 0 4px !important;
+  line-height: 16px !important;
+  border-radius: 2px !important;
+  font-weight: 500;
   flex-shrink: 0;
+  margin: 0 !important;
 }
 
 /* Bug 标题链接样式 */
@@ -76,22 +78,18 @@
 
 .bug-title-link:hover {
   color: #3b82f6;
-  text-decoration: underline;
 }
 
-.action-dot {
+/* 三点操作按钮样式 - 与测试用例保持一致 */
+.bug-table .action-dot {
+  opacity: 0;
+  transition: opacity 0.2s;
   padding: 0 4px !important;
   height: 24px !important;
 }
 
-/* 更紧凑的三点按钮（配合 action-col 宽度 24px） */
-.bug-table .action-dot {
-  padding: 0 !important;
-  min-width: 24px !important;
-}
-
-.action-dot:hover {
-  background-color: #f0f0f0 !important;
+.bug-table tr:hover .action-dot {
+  opacity: 1;
 }
 
 /* 表格样式 */
@@ -120,6 +118,10 @@
 .bug-table .ant-table-tbody > tr > td {
   padding: 10px 8px;
   border-bottom: 1px solid #f5f5f5;
+}
+
+.bug-table .ant-table-tbody > tr {
+  cursor: pointer;
 }
 
 .bug-table .ant-table-tbody > tr:hover > td {

@@ -31,6 +31,7 @@ class Project(Base):
     members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
     testcases = relationship("TestCase", back_populates="project", cascade="all, delete-orphan")
     testcase_categories = relationship("TestCaseCategory", back_populates="project", cascade="all, delete-orphan")
+    requirement_categories = relationship("RequirementCategory", back_populates="project", cascade="all, delete-orphan")
 
 
 class ProjectMember(Base):

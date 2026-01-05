@@ -1,0 +1,108 @@
+.testcase-list {
+  padding: 16px;
+  background: #fff;
+  height: 100%;
+  overflow: auto;
+}
+
+/* 去掉顶部边框线 */
+.testcase-list .ant-table-wrapper {
+  border-top: none;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toolbar-left {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.result-count {
+  color: #8c8c8c;
+  font-size: 13px;
+  margin-right: 8px;
+}
+
+/* 操作列（三点按钮） */
+.testcase-table .action-col {
+  padding: 0 4px 0 0 !important;
+}
+
+.testcase-table .action-dot {
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 0 4px !important;
+  height: 24px !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.testcase-table tr:hover .action-dot {
+  opacity: 1;
+}
+
+.testcase-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 类型标签样式 - 与 RequirementList 保持一致 */
+.testcase-name-cell .type-tag {
+  font-size: 10px !important;
+  padding: 0 4px !important;
+  line-height: 16px !important;
+  border-radius: 2px !important;
+  font-weight: 500;
+  flex-shrink: 0;
+  margin: 0 !important;
+}
+
+.testcase-name-link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 400;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.testcase-name-link:hover {
+  color: #3b82f6;
+}
+
+/* 表格行手势样式 */
+.testcase-table .ant-table-tbody > tr {
+  cursor: pointer;
+}
+
+.testcase-table .ant-table-cell {
+  padding: 10px 8px !important;
+}
+
+.testcase-table .ant-select-selector {
+  padding: 0 !important;
+}
+
+.testcase-table .ant-select-selection-item {
+  padding-right: 0 !important;
+}

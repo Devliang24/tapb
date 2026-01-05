@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.requirement import Requirement
-from app.models.task import Task, TaskStatus
+from app.models.task import Task, TaskStatus, TaskHistory
 from app.schemas.task import (
     TaskCreate,
     TaskUpdate,
@@ -151,14 +151,57 @@ def update_task(
     requirement = db.query(Requirement).filter(Requirement.id == task.requirement_id).first()
     check_project_access(db, requirement.project_id, current_user)
 
-    # Apply updates
+    # Apply updates and record history
     update_data = task_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
+        old_value = getattr(task, field)
+        if old_value != value:
+            old_str = old_value.value if hasattr(old_value, 'value') else str(old_value) if old_value is not None else None
+            new_str = value.value if hasattr(value, 'value') else str(value) if value is not None else None
+            history_entry = TaskHistory(
+                task_id=task_id,
+                field=field,
+                old_value=old_str,
+                new_value=new_str,
+                changed_by=current_user.id,
+            )
+            db.add(history_entry)
         setattr(task, field, value)
 
     db.commit()
     db.refresh(task)
     return task
+
+
+@router.get("/api/tasks/{task_id}/history")
+def get_task_history(
+    task_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get task history"""
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    requirement = db.query(Requirement).filter(Requirement.id == task.requirement_id).first()
+    check_project_access(db, requirement.project_id, current_user)
+
+    history = db.query(TaskHistory).filter(
+        TaskHistory.task_id == task_id
+    ).order_by(desc(TaskHistory.changed_at)).all()
+    
+    return [
+        {
+            "id": h.id,
+            "field": h.field,
+            "old_value": h.old_value,
+            "new_value": h.new_value,
+            "changed_at": h.changed_at,
+            "user": {"id": h.user.id, "username": h.user.username} if h.user else None
+        }
+        for h in history
+    ]
 
 
 @router.delete("/api/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)

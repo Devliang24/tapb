@@ -1,0 +1,11 @@
+.testcase-form .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.testcase-form .ant-form-item-label {
+  padding-bottom: 4px;
+}
+
+.testcase-form .ant-form-item-label > label {
+  font-weight: 500;
+}

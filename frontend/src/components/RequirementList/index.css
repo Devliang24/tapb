@@ -1,37 +1,31 @@
-/* RequirementList Tree Table Styles */
+/* RequirementList 样式 - 参考 TestCaseList */
+
+/* 包装容器 */
+.requirement-list-wrapper {
+  padding: 16px;
+  background: #fff;
+  height: 100%;
+  overflow: auto;
+}
+
+/* 去掉顶部边框线 */
+.requirement-list-wrapper .ant-table-wrapper {
+  border-top: none;
+}
 
 /* 工具栏样式 */
 .toolbar {
-  padding: 0 0 12px 0;
   display: flex;
-  align-items: center;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fff;
   justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.toolbar-label {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-right: 8px;
-}
-
-.filter-select {
-  width: 140px;
-}
-
-.filter-select .ant-select-selector {
-  border-color: #e5e7eb !important;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .toolbar-left {
   display: flex;
-  gap: 12px;
-  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -39,6 +33,43 @@
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.result-count {
+  color: #8c8c8c;
+  font-size: 13px;
+  margin-right: 8px;
+}
+
+/* 快速创建 */
+.quick-create-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #fafafa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: text;
+}
+
+.quick-create-row:hover {
+  border-color: #1890ff;
+  background: #f0f7ff;
+}
+
+.quick-create-icon {
+  color: #999;
+  margin-right: 8px;
+}
+
+.quick-create-input {
+  flex: 1;
+  background: transparent;
+}
+
+.quick-create-input:focus {
+  box-shadow: none;
 }
 
 /* 树形表格样式 */
@@ -59,6 +90,7 @@
 .story-row {
   background: #ffffff;
   font-weight: 500;
+  cursor: pointer;
 }
 
 .story-row:hover {
@@ -74,6 +106,7 @@
 /* Task 行样式 */
 .task-row {
   background: #fafafa;
+  cursor: pointer;
 }
 
 .task-row:hover {
@@ -89,6 +122,7 @@
 /* Bug 行样式 */
 .bug-row {
   background: #fafafa;
+  cursor: pointer;
 }
 
 .bug-row:hover {
@@ -105,49 +139,19 @@
 .title-cell {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 /* 缩进容器 */
 .title-cell-indent {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-/* 减少多选框列宽度，参考缺陷页 32x45 */
-.req-compact .ant-table-selection-column {
-  width: 32px !important;
-  min-width: 32px !important;
-  max-width: 32px !important;
-  text-align: left !important;
-  padding: 10px 0 !important;
-}
-
-/* 覆盖 colgroup 宽度 */
-.req-compact .ant-table-selection-col {
-  width: 32px !important;
-}
-
-/* 仅在需求页减少标题列左边距 */
-.req-compact td.title-col,
-.req-compact th.title-col {
-  padding-left: 0 !important;
-}
-
-/* 操作列（独立三点）样式，仅需求页 */
-.req-compact td.action-col,
-.req-compact th.action-col {
-  padding: 0 4px !important;
-  text-align: center;
-  width: 28px !important;
-  min-width: 28px !important;
-  max-width: 28px !important;
-}
-
-/* 需求页标题单元格内部间距更小 */
-.req-compact .title-cell {
   gap: 4px;
+}
+
+/* 多选框列样式 - 与迭代页面保持一致 */
+.tree-table .ant-table-cell {
+  padding: 10px 8px !important;
 }
 
 .title-cell-indent.level-1 {
@@ -158,14 +162,26 @@
   padding-left: 48px;
 }
 
-/* 类型标签样式（仅需求页更紧凑） */
-.req-compact .type-tag {
+/* ID 列样式 */
+.id-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.id-number {
+  font-size: 13px;
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.type-tag-small {
   font-size: 10px !important;
   padding: 0 4px !important;
   line-height: 16px !important;
-  border-radius: 3px !important;
-  font-weight: 600;
-  flex-shrink: 0;
+  border-radius: 2px !important;
+  font-weight: 500;
+  margin: 0 !important;
 }
 
 /* 编号样式 */
@@ -192,13 +208,12 @@
 .story-title-link {
   color: #1f2937;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 400;
   transition: color 0.2s ease;
 }
 
 .story-title-link:hover {
   color: #3b82f6;
-  text-decoration: underline;
 }
 
 /* Task 标题样式 */
@@ -217,7 +232,6 @@
 
 .task-title-link:hover {
   color: #3b82f6;
-  text-decoration: underline;
 }
 
 /* Bug 标题链接样式 */
@@ -231,7 +245,6 @@
 
 .bug-title-link:hover {
   color: #3b82f6;
-  text-decoration: underline;
 }
 
 /* 展开图标样式 */
@@ -257,30 +270,29 @@
   text-align: center;
 }
 
-/* 仅需求页更紧凑的展开图标间距 */
-.req-compact .expand-icon-inline {
-  margin-right: 2px;
-  width: 8px; /* 更窄 */
-}
-
 .expand-icon-inline:hover {
   color: #3b82f6;
 }
 
-.action-dot {
+/* 三点操作按钮样式 - 与测试用例保持一致 */
+.tree-table .action-col {
+  padding: 0 4px !important;
+}
+
+.tree-table .action-dot {
+  opacity: 0;
+  transition: opacity 0.2s;
   padding: 0 4px !important;
   height: 24px !important;
+  width: 24px !important;
+  min-width: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-/* 更紧凑的三点按钮 */
-.req-compact .action-dot {
-  padding: 0 2px !important;
-  min-width: 20px !important;
-  width: 20px !important;
-}
-
-.action-dot:hover {
-  background-color: #f0f0f0 !important;
+.tree-table tr:hover .action-dot {
+  opacity: 1;
 }
 
 /* 缩进区域样式 */

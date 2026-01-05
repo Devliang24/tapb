@@ -1,0 +1,92 @@
+.detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-title .title-name {
+  font-weight: normal;
+  color: #595959;
+  margin-left: 4px;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.testcase-detail {
+  padding: 8px 0;
+}
+
+.detail-section {
+  margin-bottom: 24px;
+}
+
+.detail-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.section-content {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 12px 16px;
+  min-height: 60px;
+}
+
+.empty-text {
+  color: #bfbfbf;
+  font-style: italic;
+}
+
+.testcase-detail .ant-descriptions-item-label {
+  color: #8c8c8c;
+}
+
+.testcase-detail .ant-descriptions-item-content {
+  color: #262626;
+}
+
+/* HTML 内容渲染样式 */
+.html-content {
+  line-height: 1.6;
+}
+
+.html-content p {
+  margin: 0 0 8px 0;
+}
+
+.html-content p:last-child {
+  margin-bottom: 0;
+}
+
+.html-content h4 {
+  margin: 12px 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.html-content h4:first-child {
+  margin-top: 0;
+}
+
+.html-content ol, .html-content ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.html-content li {
+  margin-bottom: 4px;
+}

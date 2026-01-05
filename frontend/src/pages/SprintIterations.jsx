@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Button, Empty, Spin } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import requirementService from '../services/requirementService';
+import bugService from '../services/bugService';
 import sprintService from '../services/sprintService';
+import testCaseService from '../services/testCaseService';
 import SprintCard from '../components/SprintCard';
 import RequirementList from '../components/RequirementList';
 import RequirementForm from '../components/RequirementForm';
 import RequirementDetail from '../components/RequirementDetail';
 import TaskDetail from '../components/TaskDetail';
 import BugDetail from '../components/BugDetail';
+import TestCaseDetail from '../components/TestCaseDetail';
 import BugList from '../components/BugList';
 import BugForm from '../components/BugForm';
 import SprintForm from '../components/SprintForm';
@@ -26,6 +30,7 @@ const SprintIterations = () => {
   const [detailReqId, setDetailReqId] = useState(null);
   const [detailTaskId, setDetailTaskId] = useState(null);
   const [detailBugId, setDetailBugId] = useState(null);
+  const [detailTestCaseId, setDetailTestCaseId] = useState(null);
   const [sprintFormVisible, setSprintFormVisible] = useState(false);
   const [editingSprint, setEditingSprint] = useState(null);
   const [bugFormVisible, setBugFormVisible] = useState(false);
@@ -34,6 +39,41 @@ const SprintIterations = () => {
     queryKey: ['sprints', projectId],
     queryFn: () => sprintService.getSprints(parseInt(projectId)),
   });
+
+  // 获取需求列表用于上下切换
+  const { data: reqData } = useQuery({
+    queryKey: ['requirements', parseInt(projectId), selectedSprintId],
+    queryFn: () => requirementService.getRequirements(parseInt(projectId), { 
+      sprint_id: activeTab === 'iterations' ? selectedSprintId : undefined,
+      page_size: 100 
+    }),
+    enabled: !!projectId,
+  });
+
+  // 获取缺陷列表用于上下切换
+  const { data: bugData } = useQuery({
+    queryKey: ['bugs', parseInt(projectId)],
+    queryFn: () => bugService.getBugs({ project_id: parseInt(projectId), page_size: 100 }),
+    enabled: !!projectId && activeTab === 'bugs',
+  });
+
+  // 需求列表 ID 数组
+  const reqIds = useMemo(() => reqData?.items?.map(r => r.id) || [], [reqData]);
+  const currentReqIndex = reqIds.indexOf(detailReqId);
+
+  // 缺陷列表 ID 数组
+  const bugIds = useMemo(() => bugData?.items?.map(b => b.id) || [], [bugData]);
+  const currentBugIndex = bugIds.indexOf(detailBugId);
+
+  // 获取当前需求的测试用例列表用于上下切换
+  const { data: testCaseData } = useQuery({
+    queryKey: ['requirementTestCases', detailReqId],
+    queryFn: () => testCaseService.getTestCases({ requirement_id: detailReqId }),
+    enabled: !!detailReqId,
+  });
+
+  const testCaseIds = useMemo(() => testCaseData?.items?.map(t => t.id) || [], [testCaseData]);
+  const currentTestCaseIndex = testCaseIds.indexOf(detailTestCaseId);
 
   // 默认选择进行中的迭代
   useEffect(() => {
@@ -59,6 +99,9 @@ const SprintIterations = () => {
   };
 
   const handleReqClick = (req) => {
+    // 关闭其他类型的抽屉，切换到需求详情
+    setDetailTaskId(null);
+    setDetailBugId(null);
     setDetailReqId(req.id);
   };
 
@@ -69,11 +112,21 @@ const SprintIterations = () => {
   };
 
   const handleTaskClick = (task) => {
+    // 关闭其他类型的抽屉，切换到任务详情
+    setDetailReqId(null);
+    setDetailBugId(null);
     setDetailTaskId(task.id);
   };
 
   const handleTaskUpdate = () => {
     queryClient.invalidateQueries(['requirements', parseInt(projectId)]);
+  };
+
+  const handleBugClick = (bugId) => {
+    // 关闭其他类型的抽屉，切换到 Bug 详情
+    setDetailReqId(null);
+    setDetailTaskId(null);
+    setDetailBugId(bugId);
   };
 
   const handleBugUpdate = () => {
@@ -92,7 +145,7 @@ const SprintIterations = () => {
           }}
           onRequirementClick={handleReqClick}
           onTaskClick={handleTaskClick}
-          onBugClick={(bugId) => setDetailBugId(bugId)}
+          onBugClick={handleBugClick}
         />
       );
     }
@@ -102,7 +155,7 @@ const SprintIterations = () => {
         <BugList
           projectId={parseInt(projectId)}
           onCreateClick={() => setBugFormVisible(true)}
-          onBugClick={(bugId) => setDetailBugId(bugId)}
+          onBugClick={handleBugClick}
         />
       );
     }
@@ -113,15 +166,14 @@ const SprintIterations = () => {
         {/* 左侧：迭代列表 */}
         <div className="iterations-sidebar">
           <div className="sidebar-header">
-            <Button 
-              type="primary" 
+            <span className="sidebar-title">迭代列表</span>
+            <PlusOutlined
+              className="sidebar-add-btn"
               onClick={() => {
                 setEditingSprint(null);
                 setSprintFormVisible(true);
               }}
-            >
-              新建
-            </Button>
+            />
           </div>
           <div className="sidebar-content">
             {isLoading ? (
@@ -158,7 +210,7 @@ const SprintIterations = () => {
               }}
               onRequirementClick={handleReqClick}
               onTaskClick={handleTaskClick}
-              onBugClick={(bugId) => setDetailBugId(bugId)}
+              onBugClick={handleBugClick}
             />
           ) : (
             <div className="iterations-empty">
@@ -206,6 +258,27 @@ const SprintIterations = () => {
         }}
         onEdit={handleReqEdit}
         requirement={typeof detailReqId === 'string' ? editingReq : null}
+        onTaskClick={(taskId) => {
+          setDetailReqId(null);
+          setDetailBugId(null);
+          setDetailTaskId(taskId);
+        }}
+        onBugClick={(bugId) => {
+          setDetailReqId(null);
+          setDetailTaskId(null);
+          setDetailTestCaseId(null);
+          setDetailBugId(bugId);
+        }}
+        onTestCaseClick={(testCaseId) => {
+          setDetailReqId(null);
+          setDetailTaskId(null);
+          setDetailBugId(null);
+          setDetailTestCaseId(testCaseId);
+        }}
+        onPrev={() => currentReqIndex > 0 && setDetailReqId(reqIds[currentReqIndex - 1])}
+        onNext={() => currentReqIndex < reqIds.length - 1 && setDetailReqId(reqIds[currentReqIndex + 1])}
+        hasPrev={currentReqIndex > 0}
+        hasNext={currentReqIndex < reqIds.length - 1 && currentReqIndex >= 0}
       />
 
       <BugForm
@@ -228,6 +301,21 @@ const SprintIterations = () => {
         onClose={() => setDetailBugId(null)}
         onUpdate={handleBugUpdate}
         projectId={parseInt(projectId)}
+        onPrev={() => currentBugIndex > 0 && setDetailBugId(bugIds[currentBugIndex - 1])}
+        onNext={() => currentBugIndex < bugIds.length - 1 && setDetailBugId(bugIds[currentBugIndex + 1])}
+        hasPrev={currentBugIndex > 0}
+        hasNext={currentBugIndex < bugIds.length - 1 && currentBugIndex >= 0}
+      />
+
+      <TestCaseDetail
+        testCaseId={detailTestCaseId}
+        open={!!detailTestCaseId}
+        onClose={() => setDetailTestCaseId(null)}
+        projectId={parseInt(projectId)}
+        onPrev={() => currentTestCaseIndex > 0 && setDetailTestCaseId(testCaseIds[currentTestCaseIndex - 1])}
+        onNext={() => currentTestCaseIndex < testCaseIds.length - 1 && setDetailTestCaseId(testCaseIds[currentTestCaseIndex + 1])}
+        hasPrev={currentTestCaseIndex > 0}
+        hasNext={currentTestCaseIndex < testCaseIds.length - 1 && currentTestCaseIndex >= 0}
       />
     </div>
   );

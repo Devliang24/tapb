@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Drawer, Tabs, Button, Spin, Select, Input } from 'antd';
-import { EditOutlined, ExpandOutlined, CompressOutlined } from '@ant-design/icons';
+import { EditOutlined, ExpandOutlined, CompressOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
 import './index.css';
 
 /**
@@ -63,15 +63,45 @@ const DetailDrawer = ({
   showSidebar = true,
   editedTitle,
   onTitleChange,
+  onPrev,
+  onNext,
+  hasPrev = false,
+  hasNext = false,
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const drawerRef = useRef(null);
+
+  // 点击抽屉外部关闭
+  useEffect(() => {
+    if (!visible) return;
+
+    const handleClickOutside = (event) => {
+      // 检查点击是否在抽屉内部
+      const drawerContent = document.querySelector('.ant-drawer-content-wrapper');
+      // 排除下拉菜单、弹出层等
+      const isInDropdown = event.target.closest('.ant-select-dropdown, .ant-popover, .ant-popconfirm, .ant-dropdown');
+      if (drawerContent && !drawerContent.contains(event.target) && !isInDropdown) {
+        onClose?.();
+      }
+    };
+
+    // 延迟添加事件监听，避免立即触发
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [visible, onClose]);
 
   const currentStatusOption = statusOptions.find(opt => opt.value === status);
   const statusColor = currentStatusOption?.color || 'default';
 
   const renderHeader = () => (
     <div className="detail-drawer-header">
-      <div className="detail-drawer-header-left">
+      <div className="detail-drawer-header-left" onClick={(e) => e.stopPropagation()}>
         {statusOptions.length > 0 && (
           <Select
             value={status}
@@ -100,7 +130,7 @@ const DetailDrawer = ({
           <span className="detail-drawer-title">{title}</span>
         )}
       </div>
-      <div className="detail-drawer-header-right">
+      <div className="detail-drawer-header-right" onClick={(e) => e.stopPropagation()}>
         {editable && (
           isEditing ? (
             <>
@@ -109,20 +139,41 @@ const DetailDrawer = ({
             </>
           ) : (
             <Button 
+              type="text"
               size="small" 
               icon={<EditOutlined />} 
               onClick={onEdit}
-            >
-              编辑
-            </Button>
+              title="编辑"
+            />
           )
         )}
         <Button
+          type="text"
           size="small"
           icon={expanded ? <CompressOutlined /> : <ExpandOutlined />}
           onClick={() => setExpanded(!expanded)}
         />
         {extraActions}
+        {(onPrev || onNext) && (
+          <>
+            <Button
+              type="text"
+              size="small"
+              icon={<UpOutlined />}
+              onClick={onPrev}
+              disabled={!hasPrev}
+              title="上一个"
+            />
+            <Button
+              type="text"
+              size="small"
+              icon={<DownOutlined />}
+              onClick={onNext}
+              disabled={!hasNext}
+              title="下一个"
+            />
+          </>
+        )}
       </div>
     </div>
   );
@@ -203,7 +254,7 @@ const DetailDrawer = ({
       className="detail-drawer"
       closable={false}
       destroyOnClose
-      styles={{ mask: { backgroundColor: 'transparent' } }}
+      mask={false}
     >
       {renderContent()}
     </Drawer>

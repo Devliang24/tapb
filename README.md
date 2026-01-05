@@ -8,31 +8,29 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3776ab?style=flat-square&logo=python)
 ![Ant Design](https://img.shields.io/badge/Ant%20Design-5.x-0170fe?style=flat-square&logo=ant-design)
 
-**全栈项目管理系统 - Bug 追踪 / 需求管理 / 迭代规划**
-
-[English](./README_EN.md) | 简体中文
+**Full-Stack Project Management System - Bug Tracking / Requirements Management / Sprint Planning**
 
 </div>
 
 ---
 
-## ✨ 特性
+## ✨ Features
 
-- **📋 项目管理** - 支持多项目管理，项目成员权限控制，灵活的项目配置
-- **🐛 Bug 追踪** - 完整的 Bug 生命周期管理，支持状态流转、优先级设置、批量操作
-- **📝 需求管理** - 需求创建、关联任务、进度跟踪，支持 Markdown 格式的详细描述
-- **🎯 迭代规划** - Sprint 管理，迭代计划与执行，时间线可视化
-- **📊 任务管理** - 任务拆分、分配、状态跟踪，与需求关联管理
-- **💬 评论系统** - 实时评论，支持 Markdown 富文本，协作讨论更高效
-- **🔍 全局搜索** - 跨需求、任务、Bug 的全局搜索功能
-- **👥 团队协作** - 基于角色的访问控制 (RBAC)，支持多人协作
-- **🔒 本地部署** - 完全本地化运行，数据安全可控
+- **📋 Project Management** - Multi-project support, member permission control, flexible project configuration
+- **🐛 Bug Tracking** - Complete bug lifecycle management with status transitions, priority settings, and batch operations
+- **📝 Requirements Management** - Requirement creation, task linking, progress tracking with Markdown-formatted descriptions
+- **🎯 Sprint Planning** - Sprint management, iteration planning and execution, timeline visualization
+- **📊 Task Management** - Task breakdown, assignment, status tracking, and requirement association
+- **💬 Comment System** - Real-time commenting with Markdown support for efficient collaboration
+- **🔍 Global Search** - Cross-requirement, task, and bug search functionality
+- **👥 Team Collaboration** - Role-based access control (RBAC) with multi-user collaboration support
+- **🔒 Self-Hosted** - Fully local deployment with secure data control
 
-## 🏗️ 技术架构
+## 🏗️ Technical Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        前端 (React 18)                           │
+│                     Frontend (React 18)                          │
 │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌─────────────┐   │
 │  │  Zustand  │  │Ant Design │  │React Query│  │  Components │   │
 │  └───────────┘  └───────────┘  └───────────┘  └─────────────┘   │
@@ -40,7 +38,7 @@
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                       后端 (FastAPI)                             │
+│                      Backend (FastAPI)                           │
 │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌─────────────┐   │
 │  │SQLAlchemy │  │  JWT Auth │  │  Alembic  │  │  API Routes │   │
 │  └───────────┘  └───────────┘  └───────────┘  └─────────────┘   │
@@ -53,129 +51,129 @@
                       └──────────────┘
 ```
 
-### 核心技术栈
+### Core Tech Stack
 
-| 层级 | 技术选型 |
-|------|----------|
-| 前端框架 | React 18 + Vite |
-| 状态管理 | Zustand |
-| UI 组件库 | Ant Design 5.x |
-| 数据获取 | React Query (TanStack Query) |
-| 后端框架 | FastAPI |
-| 数据库 ORM | SQLAlchemy |
-| 数据库 | SQLite |
-| 数据库迁移 | Alembic |
-| 身份认证 | JWT (JSON Web Tokens) |
-| 富文本编辑 | TipTap Editor |
-| Markdown 渲染 | react-markdown |
+| Layer | Technology |
+|-------|------------|
+| Frontend Framework | React 18 + Vite |
+| State Management | Zustand |
+| UI Components | Ant Design 5.x |
+| Data Fetching | React Query (TanStack Query) |
+| Backend Framework | FastAPI |
+| Database ORM | SQLAlchemy |
+| Database | SQLite |
+| Database Migration | Alembic |
+| Authentication | JWT (JSON Web Tokens) |
+| Rich Text Editor | TipTap Editor |
+| Markdown Rendering | react-markdown |
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 前置要求
+### Prerequisites
 
-**使用 Docker（推荐）：**
+**Using Docker (Recommended):**
 - Docker >= 20.10
 - Docker Compose >= 2.0
 
-**本地开发：**
+**Local Development:**
 - Python >= 3.11
 - Node.js >= 18
 - npm >= 9
 
-### 安装步骤
+### Installation
 
-#### 方式一：Docker 一键启动（推荐）
+#### Method 1: Docker One-Click Start (Recommended)
 
-1. **克隆项目**
+1. **Clone the repository**
 
 ```bash
 git clone https://github.com/Devliang24/tapb.git
 cd tapb
 ```
 
-2. **启动所有服务**
+2. **Start all services**
 
 ```bash
-# 启动后端 + 前端
+# Start backend + frontend
 docker-compose up -d
 
-# 查看日志
+# View logs
 docker-compose logs -f
 
-# 查看特定服务日志
+# View specific service logs
 docker-compose logs -f backend
 docker-compose logs -f frontend
 ```
 
-3. **访问应用**
+3. **Access the application**
 
-- **前端**: http://localhost:5173
-- **后端 API**: http://localhost:8000
-- **API 文档**: http://localhost:8000/docs
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
 
-4. **停止服务**
+4. **Stop services**
 
 ```bash
 docker-compose down
 ```
 
-#### 方式二：本地启动
+#### Method 2: Local Setup
 
-1. **克隆项目**
+1. **Clone the repository**
 
 ```bash
 git clone https://github.com/Devliang24/tapb.git
 cd tapb
 ```
 
-2. **启动后端**
+2. **Start backend**
 
 ```bash
 cd backend
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 
-# 运行数据库迁移并启动服务
+# Run database migrations and start server
 ./start.sh
 ```
 
-后端将在 http://localhost:8000 启动
+Backend will start at http://localhost:8000
 
-3. **启动前端（新终端）**
+3. **Start frontend (new terminal)**
 
 ```bash
 cd frontend
 
-# 安装依赖
+# Install dependencies
 npm install
 
-# 启动开发服务器
+# Start development server
 npm run dev
 ```
 
-前端将在 http://localhost:5173 启动
+Frontend will start at http://localhost:5173
 
-### 初始化示例数据
+### Initialize Sample Data
 
-系统提供了多个数据初始化脚本：
+The system provides multiple data initialization scripts:
 
 ```bash
-# 方式一：使用 Docker
+# Method 1: Using Docker
 
-# 1. 重置为单个示例项目
+# 1. Reset to single demo project
 docker-compose exec backend python reset_to_single_project.py
 
-# 2. 为示例项目添加丰富的数据（迭代、需求、任务、Bug）
+# 2. Seed demo project with rich data (sprints, requirements, tasks, bugs)
 docker-compose exec backend python seed_demo_project.py
 
-# 3. 创建公共示例空间（约20个不同行业的项目）
+# 3. Create public example spaces (~20 projects from different industries)
 docker-compose exec backend python seed_spaces.py
 
-# 4. 创建测试用户（10个用户，默认密码：123456）
+# 4. Create test users (10 users, default password: 123456)
 docker-compose exec backend python seed_users.py
 
-# 方式二：本地运行
+# Method 2: Local Run
 cd backend
 python3 reset_to_single_project.py
 python3 seed_demo_project.py
@@ -183,283 +181,283 @@ python3 seed_spaces.py
 python3 seed_users.py
 ```
 
-### 默认账号
+### Default Accounts
 
-首次访问系统时，可以注册新账号。如果运行了 `seed_users.py`，可以使用以下测试账号：
+On first access, you can register a new account. If you've run `seed_users.py`, you can use these test accounts:
 
-| 用户名 | 邮箱 | 密码 | 角色 |
-|-------|------|------|------|
-| 张伟 | zhangwei@example.com | 123456 | 开发者 |
-| 李娜 | lina@example.com | 123456 | 测试工程师 |
-| 王强 | wangqiang@example.com | 123456 | 产品经理 |
-| 刘洋 | liuyang@example.com | 123456 | 开发者 |
+| Username | Email | Password | Role |
+|----------|-------|----------|------|
+| 张伟 | zhangwei@example.com | 123456 | Developer |
+| 李娜 | lina@example.com | 123456 | QA Engineer |
+| 王强 | wangqiang@example.com | 123456 | Product Manager |
+| 刘洋 | liuyang@example.com | 123456 | Developer |
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 tapb/
-├── backend/                      # FastAPI 后端项目
+├── backend/                      # FastAPI backend
 │   ├── app/
-│   │   ├── models/               # SQLAlchemy ORM 模型
-│   │   │   ├── project.py       # 项目模型
-│   │   │   ├── bug.py           # Bug 模型
-│   │   │   ├── requirement.py   # 需求模型
-│   │   │   ├── task.py          # 任务模型
-│   │   │   ├── sprint.py        # 迭代模型
-│   │   │   └── user.py          # 用户模型
-│   │   ├── schemas/              # Pydantic 数据验证
-│   │   ├── api/                  # API 路由定义
-│   │   │   ├── auth.py          # 认证路由
-│   │   │   ├── projects.py      # 项目路由
-│   │   │   ├── bugs.py          # Bug 路由
-│   │   │   ├── requirements.py  # 需求路由
-│   │   │   ├── tasks.py         # 任务路由
-│   │   │   └── sprints.py       # 迭代路由
-│   │   ├── services/             # 业务逻辑层
-│   │   ├── utils/                # 工具函数
-│   │   │   ├── dependencies.py  # FastAPI 依赖
-│   │   │   └── security.py      # 安全相关
-│   │   ├── database.py           # 数据库配置
-│   │   └── main.py               # FastAPI 应用入口
-│   ├── alembic/                  # 数据库迁移
-│   ├── seed_demo_project.py      # 示例项目数据
-│   ├── seed_spaces.py            # 公共空间数据
-│   ├── seed_users.py             # 测试用户数据
-│   ├── reset_to_single_project.py # 重置项目脚本
+│   │   ├── models/               # SQLAlchemy ORM models
+│   │   │   ├── project.py       # Project model
+│   │   │   ├── bug.py           # Bug model
+│   │   │   ├── requirement.py   # Requirement model
+│   │   │   ├── task.py          # Task model
+│   │   │   ├── sprint.py        # Sprint model
+│   │   │   └── user.py          # User model
+│   │   ├── schemas/              # Pydantic validation
+│   │   ├── api/                  # API route definitions
+│   │   │   ├── auth.py          # Auth routes
+│   │   │   ├── projects.py      # Project routes
+│   │   │   ├── bugs.py          # Bug routes
+│   │   │   ├── requirements.py  # Requirement routes
+│   │   │   ├── tasks.py         # Task routes
+│   │   │   └── sprints.py       # Sprint routes
+│   │   ├── services/             # Business logic layer
+│   │   ├── utils/                # Utility functions
+│   │   │   ├── dependencies.py  # FastAPI dependencies
+│   │   │   └── security.py      # Security utilities
+│   │   ├── database.py           # Database configuration
+│   │   └── main.py               # FastAPI app entry point
+│   ├── alembic/                  # Database migrations
+│   ├── seed_demo_project.py      # Demo project data
+│   ├── seed_spaces.py            # Public spaces data
+│   ├── seed_users.py             # Test users data
+│   ├── reset_to_single_project.py # Reset project script
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   └── start.sh                  # 启动脚本
+│   └── start.sh                  # Startup script
 │
-├── frontend/                     # React 前端项目
+├── frontend/                     # React frontend
 │   ├── src/
-│   │   ├── components/           # React 组件
-│   │   │   ├── Layout.jsx       # 布局组件
-│   │   │   ├── AuthModal.jsx    # 认证模态框
-│   │   │   ├── ProjectList.jsx  # 项目列表
-│   │   │   ├── BugList.jsx      # Bug 列表
-│   │   │   ├── RequirementList.jsx # 需求列表
-│   │   │   ├── SprintList.jsx   # 迭代列表
-│   │   │   ├── GlobalSearch.jsx # 全局搜索
-│   │   │   └── MarkdownEditor.jsx # Markdown 编辑器
-│   │   ├── pages/                # 页面组件
-│   │   │   ├── Home.jsx         # 首页
-│   │   │   ├── SprintIterations.jsx # 迭代页面
-│   │   │   ├── Settings.jsx     # 设置页面
-│   │   │   └── ProjectSettings.jsx # 项目设置
-│   │   ├── services/             # API 服务
-│   │   │   ├── api.js           # Axios 实例
-│   │   │   ├── authService.js   # 认证服务
-│   │   │   ├── projectService.js # 项目服务
-│   │   │   ├── bugService.js    # Bug 服务
-│   │   │   ├── requirementService.js # 需求服务
-│   │   │   └── sprintService.js # 迭代服务
-│   │   ├── stores/               # Zustand 状态管理
-│   │   │   └── authStore.js     # 认证状态
-│   │   ├── App.jsx               # 应用根组件
-│   │   └── main.jsx              # 应用入口
+│   │   ├── components/           # React components
+│   │   │   ├── Layout.jsx       # Layout component
+│   │   │   ├── AuthModal.jsx    # Auth modal
+│   │   │   ├── ProjectList.jsx  # Project list
+│   │   │   ├── BugList.jsx      # Bug list
+│   │   │   ├── RequirementList.jsx # Requirement list
+│   │   │   ├── SprintList.jsx   # Sprint list
+│   │   │   ├── GlobalSearch.jsx # Global search
+│   │   │   └── MarkdownEditor.jsx # Markdown editor
+│   │   ├── pages/                # Page components
+│   │   │   ├── Home.jsx         # Home page
+│   │   │   ├── SprintIterations.jsx # Iterations page
+│   │   │   ├── Settings.jsx     # Settings page
+│   │   │   └── ProjectSettings.jsx # Project settings
+│   │   ├── services/             # API services
+│   │   │   ├── api.js           # Axios instance
+│   │   │   ├── authService.js   # Auth service
+│   │   │   ├── projectService.js # Project service
+│   │   │   ├── bugService.js    # Bug service
+│   │   │   ├── requirementService.js # Requirement service
+│   │   │   └── sprintService.js # Sprint service
+│   │   ├── stores/               # Zustand state management
+│   │   │   └── authStore.js     # Auth state
+│   │   ├── App.jsx               # App root component
+│   │   └── main.jsx              # App entry point
 │   ├── package.json
 │   └── vite.config.js
 │
-├── docker-compose.yml            # Docker 编排配置
-├── WARP.md                       # 项目开发指南
-└── README.md                     # 项目说明文档
+├── docker-compose.yml            # Docker orchestration
+├── WARP.md                       # Development guide
+└── README.md                     # Project documentation
 ```
 
-## 🔧 配置说明
+## 🔧 Configuration
 
-### 环境变量
+### Environment Variables
 
-**后端环境变量** (`backend/.env`):
+**Backend environment variables** (`backend/.env`):
 
 ```env
-# 数据库配置
+# Database configuration
 DATABASE_URL=sqlite:///./tapb.db
 
-# JWT 配置
+# JWT configuration
 SECRET_KEY=your-secret-key-here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=43200
 
-# CORS 配置
+# CORS configuration
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:5174
 ```
 
-**前端环境变量** (`frontend/.env`):
+**Frontend environment variables** (`frontend/.env`):
 
 ```env
-# API 地址
+# API URL
 VITE_API_URL=http://localhost:8000
 ```
 
-### Docker 配置
+### Docker Configuration
 
-`docker-compose.yml` 配置了两个服务：
+`docker-compose.yml` configures two services:
 
-- **backend**: FastAPI 应用 (端口 8000)
-  - 自动运行数据库迁移
-  - 支持热重载
-- **frontend**: React 应用 (端口 5173)
-  - Vite 开发服务器
-  - 支持热模块替换 (HMR)
+- **backend**: FastAPI application (port 8000)
+  - Auto-runs database migrations
+  - Supports hot reload
+- **frontend**: React application (port 5173)
+  - Vite development server
+  - Supports hot module replacement (HMR)
 
-## 📖 使用指南
+## 📖 Usage Guide
 
-### 1. 创建项目
+### 1. Create Project
 
-1. 访问首页
-2. 点击「创建项目」按钮
-3. 填写项目名称、项目键（用于编号前缀）、描述
-4. 提交创建
+1. Visit the home page
+2. Click "Create Project" button
+3. Fill in project name, key (for ID prefix), and description
+4. Submit to create
 
-### 2. 迭代管理
+### 2. Sprint Management
 
-1. 进入项目详情
-2. 切换到「迭代」标签页
-3. 创建新迭代，设置开始/结束日期、目标
-4. 将需求和任务关联到迭代
+1. Enter project details
+2. Switch to "Iterations" tab
+3. Create new sprint with start/end dates and goals
+4. Associate requirements and tasks to the sprint
 
-### 3. 需求管理
+### 3. Requirements Management
 
-1. 在项目中创建需求
-2. 设置需求类型（功能/优化/研究）、优先级、状态
-3. 使用 Markdown 编辑器撰写详细描述
-4. 关联任务和 Bug
-5. 添加评论进行讨论
+1. Create requirement in project
+2. Set type (feature/enhancement/research), priority, and status
+3. Use Markdown editor for detailed description
+4. Link tasks and bugs
+5. Add comments for discussion
 
-### 4. Bug 追踪
+### 4. Bug Tracking
 
-1. 创建 Bug，系统自动生成编号（如 DEMO-BUG-001）
-2. 设置严重程度、优先级、分配给相关人员
-3. 通过状态流转跟踪 Bug 生命周期：
-   - 待处理 → 处理中 → 待验证 → 已关闭
-4. 关联到需求或迭代
-5. 批量操作支持快速处理多个 Bug
+1. Create bug with auto-generated ID (e.g., DEMO-BUG-001)
+2. Set severity, priority, and assignee
+3. Track bug lifecycle through status transitions:
+   - Open → In Progress → In Review → Closed
+4. Link to requirements or sprints
+5. Batch operations for quick processing
 
-### 5. 任务管理
+### 5. Task Management
 
-1. 从需求创建任务
-2. 任务自动获得编号（如 DEMO-TASK-001）
-3. 设置任务类型（前端/后端/测试/设计）
-4. 分配给团队成员并跟踪进度
+1. Create tasks from requirements
+2. Tasks auto-receive IDs (e.g., DEMO-TASK-001)
+3. Set task type (frontend/backend/testing/design)
+4. Assign to team members and track progress
 
-### 6. 全局搜索
+### 6. Global Search
 
-1. 点击顶部搜索框
-2. 输入关键词
-3. 实时搜索项目内的需求、任务、Bug
-4. 支持按类型筛选结果
+1. Click top search bar
+2. Enter keywords
+3. Real-time search across requirements, tasks, and bugs in project
+4. Filter results by type
 
-## 🛠️ 开发指南
+## 🛠️ Development Guide
 
-### 数据库迁移
+### Database Migrations
 
 ```bash
-# 使用 Docker
-# 创建新迁移
+# Using Docker
+# Create new migration
 docker-compose exec backend python -m alembic revision --autogenerate -m "description"
 
-# 应用迁移
+# Apply migrations
 docker-compose exec backend python -m alembic upgrade head
 
-# 回滚迁移
+# Rollback migration
 docker-compose exec backend python -m alembic downgrade -1
 
-# 本地开发
+# Local development
 cd backend
 python3 -m alembic revision --autogenerate -m "description"
 python3 -m alembic upgrade head
 python3 -m alembic downgrade -1
 ```
 
-### 添加新功能
+### Adding New Features
 
-**后端新增 API:**
+**Backend new API:**
 
-1. 在 `backend/app/models/` 中定义数据模型
-2. 在 `backend/app/schemas/` 中定义 Pydantic schema
-3. 在 `backend/app/api/` 中创建路由
-4. 在 `backend/app/services/` 中实现业务逻辑
-5. 在 `backend/app/main.py` 中注册路由
+1. Define data model in `backend/app/models/`
+2. Define Pydantic schema in `backend/app/schemas/`
+3. Create routes in `backend/app/api/`
+4. Implement business logic in `backend/app/services/`
+5. Register routes in `backend/app/main.py`
 
-**前端新增功能:**
+**Frontend new feature:**
 
-1. 在 `frontend/src/components/` 中创建组件
-2. 在 `frontend/src/services/` 中定义 API 调用
-3. 在 `frontend/src/pages/` 中创建页面
-4. 在 `frontend/src/App.jsx` 中添加路由
+1. Create component in `frontend/src/components/`
+2. Define API calls in `frontend/src/services/`
+3. Create page in `frontend/src/pages/`
+4. Add route in `frontend/src/App.jsx`
 
-### 代码规范
+### Code Standards
 
-**后端:**
-- 遵循 PEP 8 规范
-- 使用类型提示
-- API 端点使用 RESTful 风格
+**Backend:**
+- Follow PEP 8 conventions
+- Use type hints
+- Use RESTful style for API endpoints
 
-**前端:**
-- 使用 ESLint 检查代码
-- 组件使用函数式组件和 Hooks
-- 遵循 Ant Design 设计规范
+**Frontend:**
+- Use ESLint for code checking
+- Use functional components and Hooks
+- Follow Ant Design guidelines
 
-### 运行测试
+### Running Tests
 
 ```bash
-# 前端 Lint 检查
+# Frontend lint check
 cd frontend
 npm run lint
 
-# 构建生产版本
+# Build production version
 npm run build
 
-# 预览构建结果
+# Preview build
 npm run preview
 ```
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
+1. Fork this repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Create Pull Request
 
-## 📝 API 文档
+## 📝 API Documentation
 
-访问 http://localhost:8000/docs 查看完整的 Swagger API 文档，包括：
+Visit http://localhost:8000/docs for complete Swagger API documentation, including:
 
-- 用户认证 API
-- 项目管理 API
-- Bug 管理 API
-- 需求管理 API
-- 任务管理 API
-- 迭代管理 API
-- 评论 API
-- 全局搜索 API
+- User authentication API
+- Project management API
+- Bug management API
+- Requirements management API
+- Task management API
+- Sprint management API
+- Comment API
+- Global search API
 
-## 📄 许可证
+## 📄 License
 
-本项目基于 MIT 许可证开源，详见 [LICENSE](LICENSE) 文件。
+This project is open source under the MIT License. See [LICENSE](LICENSE) file for details.
 
-## 🙏 致谢
+## 🙏 Acknowledgments
 
-- [FastAPI](https://fastapi.tiangolo.com/) - 现代化的 Python Web 框架
-- [React](https://react.dev/) - 用户界面库
-- [Ant Design](https://ant.design/) - 企业级 UI 组件库
-- [Vite](https://vitejs.dev/) - 下一代前端构建工具
-- [SQLAlchemy](https://www.sqlalchemy.org/) - Python SQL 工具包
-- [TanStack Query](https://tanstack.com/query) - 强大的异步状态管理
-- [Zustand](https://zustand-demo.pmnd.rs/) - 轻量级状态管理
+- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
+- [React](https://react.dev/) - UI library
+- [Ant Design](https://ant.design/) - Enterprise UI components
+- [Vite](https://vitejs.dev/) - Next-generation frontend tooling
+- [SQLAlchemy](https://www.sqlalchemy.org/) - Python SQL toolkit
+- [TanStack Query](https://tanstack.com/query) - Powerful async state management
+- [Zustand](https://zustand-demo.pmnd.rs/) - Lightweight state management
 
-## 📞 联系方式
+## 📞 Contact
 
 - GitHub: [@Devliang24](https://github.com/Devliang24)
-- 项目地址: https://github.com/Devliang24/tapb
+- Repository: https://github.com/Devliang24/tapb
 
 ---
 
 <div align="center">
 
-**如果本项目对你有帮助，欢迎 ⭐ Star 支持！**
+**If this project helps you, please ⭐ Star to support!**
 
 </div>

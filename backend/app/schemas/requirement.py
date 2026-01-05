@@ -16,6 +16,7 @@ class RequirementBase(BaseModel):
 
 class RequirementCreate(RequirementBase):
     sprint_id: Optional[int] = None
+    category_id: Optional[int] = None
     assignee_id: Optional[int] = None
     developer_id: Optional[int] = None
     tester_id: Optional[int] = None
@@ -29,6 +30,7 @@ class RequirementUpdate(BaseModel):
     status: Optional[RequirementStatus] = None
     priority: Optional[RequirementPriority] = None
     sprint_id: Optional[int] = None
+    category_id: Optional[int] = None
     assignee_id: Optional[int] = None
     developer_id: Optional[int] = None
     tester_id: Optional[int] = None
@@ -48,6 +50,7 @@ class RequirementResponse(RequirementBase):
     id: int
     project_id: int
     sprint_id: Optional[int] = None
+    category_id: Optional[int] = None
     requirement_number: str
     status: RequirementStatus
     creator_id: int
@@ -80,6 +83,7 @@ class RequirementDetailResponse(RequirementBase):
     updated_at: datetime
     creator: Optional[UserBrief] = None
     assignee: Optional[UserBrief] = None
+    tasks: List[TaskResponse] = []  # 关联的 Task 列表
 
     class Config:
         from_attributes = True
@@ -104,3 +108,30 @@ class BulkStatusUpdateRequest(BaseModel):
 class BulkSprintUpdateRequest(BaseModel):
     requirement_ids: List[int]
     sprint_id: Optional[int] = None  # None 表示取消关联
+
+
+# ========== Category Schemas ==========
+
+class CategoryCreate(BaseModel):
+    name: str
+    project_id: int
+    parent_id: Optional[int] = None
+
+
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    parent_id: Optional[int] = None
+    order: Optional[int] = None
+
+
+class CategoryResponse(BaseModel):
+    id: int
+    project_id: int
+    parent_id: Optional[int] = None
+    name: str
+    order: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

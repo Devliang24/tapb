@@ -3,8 +3,10 @@ from app.models.project import Project, ProjectMember
 from app.models.sprint import Sprint, SprintStatus
 from app.models.requirement import (
     Requirement,
+    RequirementCategory,
     RequirementStatus,
     RequirementPriority,
+    RequirementHistory,
 )
 from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.bug import Bug, BugStatus, BugPriority, BugSeverity, BugHistory
@@ -25,8 +27,10 @@ __all__ = [
     "Sprint",
     "SprintStatus",
     "Requirement",
+    "RequirementCategory",
     "RequirementStatus",
     "RequirementPriority",
+    "RequirementHistory",
     "Task",
     "TaskStatus",
     "TaskPriority",

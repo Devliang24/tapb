@@ -32,7 +32,7 @@ const ProjectBugs = () => {
 
   return (
     <div>
-      <Breadcrumb style={{ marginBottom: 16 }}>
+      <Breadcrumb style={{ marginBottom: 6 }}>
         <Breadcrumb.Item>
           <a onClick={() => navigate('/projects')}>项目列表</a>
         </Breadcrumb.Item>
@@ -40,7 +40,7 @@ const ProjectBugs = () => {
         <Breadcrumb.Item>Bug 列表</Breadcrumb.Item>
       </Breadcrumb>
 
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 16 }}>
         <Button onClick={() => navigate('/projects')}>
           返回项目
         </Button>

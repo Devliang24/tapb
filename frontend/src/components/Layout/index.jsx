@@ -63,12 +63,13 @@ const Layout = ({ children }) => {
 
   const isProjectDetail = location.pathname.match(/^\/projects\/\d+$/);
   const isIterationsPage = location.pathname.match(/^\/projects\/\d+\/iterations$/);
+  const isRequirementsPage = location.pathname.match(/^\/projects\/\d+\/requirements$/);
   const isProjectSettings = location.pathname.match(/^\/projects\/\d+\/settings$/);
   const isTestCasesPage = location.pathname.match(/^\/projects\/\d+\/testcases$/);
-  const isProjectPage = isProjectDetail || isIterationsPage || isProjectSettings || isTestCasesPage;
+  const isProjectPage = isProjectDetail || isIterationsPage || isRequirementsPage || isProjectSettings || isTestCasesPage;
   
   const searchParams = new URLSearchParams(location.search);
-  const activeTab = isIterationsPage ? 'iterations' : isTestCasesPage ? 'testcases' : (searchParams.get('tab') || 'iterations');
+  const activeTab = isIterationsPage ? 'iterations' : isRequirementsPage ? 'requirements' : isTestCasesPage ? 'testcases' : (searchParams.get('tab') || 'iterations');
 
   const currentProjectId = location.pathname.match(/\/projects\/(\d+)/)?.[1];
   const currentProject = projects?.find(p => String(p.id) === currentProjectId);
@@ -110,6 +111,8 @@ const Layout = ({ children }) => {
     
     if (key === 'iterations') {
       navigate(`/projects/${projectId}`);
+    } else if (key === 'requirements') {
+      navigate(`/projects/${projectId}/requirements`);
     } else if (key === 'testcases') {
       navigate(`/projects/${projectId}/testcases`);
     } else {

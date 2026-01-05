@@ -53,6 +53,7 @@ class TestCase(Base):
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     category_id = Column(Integer, ForeignKey("testcase_categories.id"), nullable=True, index=True)
+    requirement_id = Column(Integer, ForeignKey("requirements.id"), nullable=True, index=True)
     case_number = Column(String(50), unique=True, nullable=False, index=True)  # e.g., "TC-001"
     name = Column(String(200), nullable=False)
     type = Column(Enum(TestCaseType), default=TestCaseType.FUNCTIONAL, nullable=False)
@@ -68,4 +69,22 @@ class TestCase(Base):
     # Relationships
     project = relationship("Project", back_populates="testcases")
     category = relationship("TestCaseCategory", back_populates="testcases")
+    requirement = relationship("Requirement")
     creator = relationship("User", back_populates="created_testcases", foreign_keys=[creator_id])
+    history = relationship("TestCaseHistory", back_populates="testcase", cascade="all, delete-orphan")
+
+
+class TestCaseHistory(Base):
+    """测试用例操作历史"""
+    __tablename__ = "testcase_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    testcase_id = Column(Integer, ForeignKey("testcases.id"), nullable=False)
+    field = Column(String(50), nullable=False)
+    old_value = Column(String(255))
+    new_value = Column(String(255))
+    changed_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    changed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    testcase = relationship("TestCase", back_populates="history")
+    user = relationship("User")

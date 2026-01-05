@@ -1,0 +1,31 @@
+/* 需求页面布局 - 参考迭代页面 */
+.requirement-page {
+  display: flex;
+  height: calc(100% + 48px);
+  min-height: 0;
+  background: #fff;
+  margin: -24px;
+  width: calc(100% + 48px);
+}
+
+/* 左侧边栏 - 右边框从顶到底连接 */
+.requirement-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-right: 1px solid #e0e0e0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 右侧主内容区 */
+.requirement-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: #fff;
+}

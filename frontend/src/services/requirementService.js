@@ -73,6 +73,38 @@ export const requirementService = {
   deleteComment: async (requirementId, commentId) => {
     await api.delete(`/api/requirements/${requirementId}/comments/${commentId}`);
   },
+
+  // 获取操作历史
+  getHistory: async (requirementId) => {
+    const response = await api.get(`/api/requirements/${requirementId}/history`);
+    return response.data;
+  },
+
+  // ========== 分类相关 API ==========
+
+  // 获取分类列表
+  getCategories: async (projectId) => {
+    const response = await api.get('/api/requirements/categories', { params: { project_id: projectId } });
+    return response.data;
+  },
+
+  // 创建分类
+  createCategory: async (data) => {
+    const response = await api.post('/api/requirements/categories', data);
+    return response.data;
+  },
+
+  // 更新分类
+  updateCategory: async (id, data) => {
+    const response = await api.put(`/api/requirements/categories/${id}`, data);
+    return response.data;
+  },
+
+  // 删除分类
+  deleteCategory: async (id) => {
+    const response = await api.delete(`/api/requirements/categories/${id}`);
+    return response.data;
+  },
 };
 
 export default requirementService;

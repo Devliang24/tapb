@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input } from 'antd';
-import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined } from '@ant-design/icons';
+import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input, Table, Empty, Timeline } from 'antd';
+import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, HistoryOutlined, SendOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DetailDrawer from '../DetailDrawer';
 import requirementService from '../../services/requirementService';
 import projectService from '../../services/projectService';
+import bugService from '../../services/bugService';
+import testCaseService from '../../services/testCaseService';
 import useAuthStore from '../../stores/authStore';
 import RichTextEditor from '../MarkdownEditor';
 import MarkdownRenderer from '../MarkdownRenderer';
@@ -23,8 +25,25 @@ const priorityOptions = [
   { value: 'low', label: '低', color: 'blue' },
 ];
 
-const RequirementDetail = ({ requirementId, visible, onClose, onUpdate }) => {
+const taskStatusOptions = [
+  { value: 'pending', label: '待处理', color: 'default' },
+  { value: 'in_progress', label: '进行中', color: 'processing' },
+  { value: 'completed', label: '已完成', color: 'success' },
+  { value: 'cancelled', label: '已取消', color: 'error' },
+];
+
+const bugStatusOptions = [
+  { value: 'new', label: '新建', color: 'blue' },
+  { value: 'confirmed', label: '已确认', color: 'orange' },
+  { value: 'in_progress', label: '处理中', color: 'purple' },
+  { value: 'resolved', label: '已解决', color: 'green' },
+  { value: 'closed', label: '已关闭', color: 'default' },
+  { value: 'reopened', label: '重新打开', color: 'red' },
+];
+
+const RequirementDetail = ({ requirementId, visible, onClose, onUpdate, onTaskClick, onBugClick, onTestCaseClick, onPrev, onNext, hasPrev, hasNext }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState('detail');
   const [editedTitle, setEditedTitle] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
   const [editedStatus, setEditedStatus] = useState('');
@@ -54,6 +73,30 @@ const { data: members } = useQuery({
     enabled: visible && !!requirement?.project_id,
   });
 
+  // 任务数据直接从 requirement 对象获取
+  const tasks = requirement?.tasks || [];
+
+  // 获取关联缺陷
+  const { data: bugs } = useQuery({
+    queryKey: ['requirementBugs', requirementId],
+    queryFn: () => bugService.getBugs({ requirement_id: requirementId }),
+    enabled: !!requirementId && visible,
+  });
+
+  // 获取关联测试用例
+  const { data: testCases } = useQuery({
+    queryKey: ['requirementTestCases', requirementId],
+    queryFn: () => testCaseService.getTestCases({ requirement_id: requirementId }),
+    enabled: !!requirementId && visible,
+  });
+
+  // 获取操作历史
+  const { data: history } = useQuery({
+    queryKey: ['requirementHistory', requirementId],
+    queryFn: () => requirementService.getHistory(requirementId),
+    enabled: !!requirementId && visible,
+  });
+
   useEffect(() => {
     if (requirement) {
       setEditedTitle(requirement.title);
@@ -67,6 +110,7 @@ const { data: members } = useQuery({
   useEffect(() => {
     if (!visible) {
       setIsEditing(false);
+      setActiveTab('detail');
       setNewComment('');
       setEditingCommentId(null);
       setEditingCommentContent('');
@@ -250,20 +294,10 @@ const { data: members } = useQuery({
     },
   ] : [];
 
-  // 主内容区
-  const renderMainContent = () => (
+  // 详情内容
+  const renderDetailContent = () => (
     <div>
-      {/* 标题编辑 */}
-      {isEditing && (
-        <div className="detail-drawer-section">
-          <Input
-            value={editedTitle}
-            onChange={(e) => setEditedTitle(e.target.value)}
-            style={{ width: '100%' }}
-          />
-        </div>
-      )}
-
+      {/* 详情描述 */}
       <div className="detail-drawer-section">
         {isEditing ? (
           <RichTextEditor
@@ -291,12 +325,12 @@ const { data: members } = useQuery({
             />
           </div>
           <Button
-            type="primary"
+            type="text"
+            icon={<SendOutlined />}
             onClick={handleAddComment}
             loading={addCommentMutation.isPending}
-          >
-            发表评论
-          </Button>
+            title="发表评论"
+          />
         </div>
         <List
           itemLayout="horizontal"
@@ -319,7 +353,7 @@ const { data: members } = useQuery({
                   </Space>
                 ) : (
                   <Space key="actions">
-                    <Button size="small" onClick={() => handleEditComment(comment)}>编辑</Button>
+                    <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEditComment(comment)} title="编辑" />
                     <Popconfirm
                       title="删除评论"
                       description="确定要删除这条评论吗？"
@@ -327,7 +361,7 @@ const { data: members } = useQuery({
                       okText="确定"
                       cancelText="取消"
                     >
-                      <Button size="small" danger loading={deleteCommentMutation.isPending}>删除</Button>
+                      <Button type="text" size="small" danger icon={<DeleteOutlined />} loading={deleteCommentMutation.isPending} title="删除" />
                     </Popconfirm>
                   </Space>
                 )
@@ -371,6 +405,285 @@ const { data: members } = useQuery({
     </div>
   );
 
+  // 任务列表内容
+  const renderTasksContent = () => {
+    const taskList = tasks || [];
+    const taskColumns = [
+      {
+        title: '编号',
+        dataIndex: 'task_number',
+        key: 'task_number',
+        width: 80,
+      },
+      {
+        title: '任务名称',
+        dataIndex: 'title',
+        key: 'title',
+        ellipsis: true,
+        render: (text, record) => (
+          <span 
+            onClick={(e) => { e.stopPropagation(); onTaskClick?.(record.id); }} 
+            style={{ cursor: 'pointer', color: '#000' }}
+          >{text}</span>
+        ),
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 100,
+        render: (status) => {
+          const opt = taskStatusOptions.find(o => o.value === status);
+          return opt ? <Tag color={opt.color}>{opt.label}</Tag> : status;
+        },
+      },
+      {
+        title: '负责人',
+        dataIndex: ['assignee', 'username'],
+        key: 'assignee',
+        width: 100,
+        render: (text) => text || '-',
+      },
+    ];
+
+    return (
+      <div>
+        {taskList.length > 0 ? (
+          <Table
+            columns={taskColumns}
+            dataSource={taskList}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="暂无关联任务" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    );
+  };
+
+  // 测试用例内容
+  const renderTestCasesContent = () => {
+    const caseList = testCases?.items || [];
+    const caseColumns = [
+      {
+        title: '编号',
+        dataIndex: 'case_number',
+        key: 'case_number',
+        width: 80,
+      },
+      {
+        title: '用例名称',
+        dataIndex: 'name',
+        key: 'name',
+        ellipsis: true,
+        render: (text, record) => (
+          <span 
+            onClick={(e) => { e.stopPropagation(); onTestCaseClick?.(record.id); }} 
+            style={{ cursor: 'pointer', color: '#000' }}
+          >{text}</span>
+        ),
+      },
+      {
+        title: '优先级',
+        dataIndex: 'priority',
+        key: 'priority',
+        width: 80,
+        render: (priority) => {
+          const colors = { high: 'red', medium: 'orange', low: 'blue' };
+          const labels = { high: '高', medium: '中', low: '低' };
+          return <Tag color={colors[priority]}>{labels[priority]}</Tag>;
+        },
+      },
+    ];
+
+    return (
+      <div>
+        {caseList.length > 0 ? (
+          <Table
+            columns={caseColumns}
+            dataSource={caseList}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="暂无关联测试用例" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    );
+  };
+
+  // 缺陷列表内容
+  const renderBugsContent = () => {
+    const bugList = bugs?.items || [];
+    const bugColumns = [
+      {
+        title: '编号',
+        dataIndex: 'bug_number',
+        key: 'bug_number',
+        width: 80,
+      },
+      {
+        title: '缺陷标题',
+        dataIndex: 'title',
+        key: 'title',
+        ellipsis: true,
+        render: (text, record) => (
+          <span 
+            onClick={(e) => { e.stopPropagation(); onBugClick?.(record.id); }} 
+            style={{ cursor: 'pointer', color: '#000' }}
+          >{text}</span>
+        ),
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 100,
+        render: (status) => {
+          const opt = bugStatusOptions.find(o => o.value === status);
+          return opt ? <Tag color={opt.color}>{opt.label}</Tag> : status;
+        },
+      },
+      {
+        title: '处理人',
+        dataIndex: ['assignee', 'username'],
+        key: 'assignee',
+        width: 100,
+        render: (text) => text || '-',
+      },
+    ];
+
+    return (
+      <div>
+        {bugList.length > 0 ? (
+          <Table
+            columns={bugColumns}
+            dataSource={bugList}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="暂无关联缺陷" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    );
+  };
+
+  // 字段名称映射
+  const fieldLabels = {
+    status: '状态',
+    priority: '优先级',
+    title: '标题',
+    description: '描述',
+    assignee_id: '负责人',
+    sprint_id: '迭代',
+  };
+
+  // 状态值映射
+  const statusLabels = {
+    draft: '草稿',
+    approved: '已批准',
+    in_progress: '进行中',
+    completed: '已完成',
+    cancelled: '已取消',
+  };
+
+  const priorityLabels = {
+    high: '高',
+    medium: '中',
+    low: '低',
+  };
+
+  // 获取可读的值
+  const getReadableValue = (field, value) => {
+    if (!value || value === 'None') return '无';
+    if (field === 'status') return statusLabels[value] || value;
+    if (field === 'priority') return priorityLabels[value] || value;
+    if (field === 'assignee_id') return value === 'None' ? '未分配' : `用户ID:${value}`;
+    return value;
+  };
+
+  // 操作历史内容
+  const renderHistoryContent = () => {
+    return (
+      <div>
+        {history && history.length > 0 ? (
+          <Timeline
+            items={history.map((item) => ({
+              key: item.id,
+              dot: <HistoryOutlined style={{ fontSize: 16, color: '#1890ff' }} />,
+              children: (
+                <div>
+                  <div style={{ color: '#666', fontSize: 12, marginBottom: 4 }}>
+                    {new Date(item.changed_at).toLocaleString('zh-CN')}
+                  </div>
+                  <div>
+                    <span style={{ fontWeight: 500, color: '#1890ff' }}>
+                      {item.user?.username || '系统'}
+                    </span>
+                    <span style={{ marginLeft: 8 }}>
+                      修改了 <strong>{fieldLabels[item.field] || item.field}</strong>
+                    </span>
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 13, color: '#666' }}>
+                    <span style={{ textDecoration: 'line-through', color: '#999' }}>
+                      {getReadableValue(item.field, item.old_value)}
+                    </span>
+                    <span style={{ margin: '0 8px' }}>→</span>
+                    <span style={{ color: '#52c41a', fontWeight: 500 }}>
+                      {getReadableValue(item.field, item.new_value)}
+                    </span>
+                  </div>
+                </div>
+              ),
+            }))}
+          />
+        ) : (
+          <Empty
+            description="暂无操作历史"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        )}
+      </div>
+    );
+  };
+
+  // 标签页配置
+  const tabs = [
+    {
+      key: 'detail',
+      label: '详细信息',
+      children: renderDetailContent(),
+    },
+    {
+      key: 'tasks',
+      label: '任务',
+      badge: tasks.length,
+      children: renderTasksContent(),
+    },
+    {
+      key: 'testcases',
+      label: '用例',
+      badge: testCases?.items?.length || 0,
+      children: renderTestCasesContent(),
+    },
+    {
+      key: 'bugs',
+      label: '缺陷',
+      badge: bugs?.items?.length || 0,
+      children: renderBugsContent(),
+    },
+    {
+      key: 'history',
+      label: '操作历史',
+      children: renderHistoryContent(),
+    },
+  ];
+
   // 状态快捷改变
   const handleStatusChange = (newStatus) => {
     updateMutation.mutate({
@@ -388,7 +701,9 @@ const { data: members } = useQuery({
       statusOptions={statusOptions}
       onStatusChange={handleStatusChange}
       loading={isLoading}
-      mainContent={renderMainContent()}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
       sidebarItems={sidebarItems}
       editable={true}
       isEditing={isEditing}
@@ -396,6 +711,12 @@ const { data: members } = useQuery({
       onSave={handleSave}
       onCancelEdit={handleCancelEdit}
       saving={updateMutation.isPending}
+      editedTitle={editedTitle}
+      onTitleChange={setEditedTitle}
+      onPrev={onPrev}
+      onNext={onNext}
+      hasPrev={hasPrev}
+      hasNext={hasNext}
     />
   );
 };

@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.sprint import Sprint, SprintStatus
-from app.models.requirement import Requirement, RequirementStatus, RequirementPriority
+from app.models.requirement import Requirement, RequirementCategory, RequirementStatus, RequirementPriority, RequirementHistory
 from app.models.task import Task
 from app.models.bug import Bug
 from app.schemas.requirement import (
@@ -19,6 +19,9 @@ from app.schemas.requirement import (
     BulkDeleteRequest,
     BulkStatusUpdateRequest,
     BulkSprintUpdateRequest,
+    CategoryCreate,
+    CategoryUpdate,
+    CategoryResponse,
 )
 from app.schemas.bug import BugResponse
 from app.schemas.comment import CommentCreate, CommentUpdate, RequirementCommentResponse
@@ -27,6 +30,105 @@ from app.utils.dependencies import get_current_user
 
 router = APIRouter(tags=["requirements"])
 
+
+# ========== Category Endpoints ==========
+# NOTE: These routes MUST be defined before dynamic /{requirement_id} routes to avoid path conflicts
+
+@router.get("/api/requirements/categories", response_model=list[CategoryResponse])
+def get_requirement_categories(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get requirement categories for a project"""
+    categories = db.query(RequirementCategory).filter(
+        RequirementCategory.project_id == project_id
+    ).order_by(RequirementCategory.order, RequirementCategory.id).all()
+    
+    return categories
+
+
+@router.post("/api/requirements/categories", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+def create_requirement_category(
+    category_data: CategoryCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new requirement category"""
+    # Verify project exists
+    project = db.query(Project).filter(Project.id == category_data.project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Get max order
+    max_order = db.query(RequirementCategory).filter(
+        RequirementCategory.project_id == category_data.project_id,
+        RequirementCategory.parent_id == category_data.parent_id
+    ).count()
+    
+    category = RequirementCategory(
+        project_id=category_data.project_id,
+        parent_id=category_data.parent_id,
+        name=category_data.name,
+        order=max_order
+    )
+    
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    
+    return category
+
+
+@router.put("/api/requirements/categories/{category_id}", response_model=CategoryResponse)
+def update_requirement_category(
+    category_id: int,
+    category_data: CategoryUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update requirement category"""
+    category = db.query(RequirementCategory).filter(RequirementCategory.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    update_data = category_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(category, field, value)
+    
+    db.commit()
+    db.refresh(category)
+    
+    return category
+
+
+@router.delete("/api/requirements/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_requirement_category(
+    category_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete requirement category (requirements in this category will become uncategorized)"""
+    category = db.query(RequirementCategory).filter(RequirementCategory.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    # Move requirements to uncategorized
+    db.query(Requirement).filter(Requirement.category_id == category_id).update(
+        {Requirement.category_id: None}
+    )
+    
+    # Move child categories to parent
+    db.query(RequirementCategory).filter(RequirementCategory.parent_id == category_id).update(
+        {RequirementCategory.parent_id: category.parent_id}
+    )
+    
+    db.delete(category)
+    db.commit()
+    return None
+
+
+# ========== Helper Functions ==========
 
 def check_project_access(db: Session, project_id: int, user: User) -> Project:
     """Check if user has access to project and return project"""
@@ -77,6 +179,7 @@ def get_project_requirements(
     status: Optional[RequirementStatus] = None,
     priority: Optional[RequirementPriority] = None,
     sprint_id: Optional[int] = None,
+    category_id: Optional[int] = Query(None, description="Filter by category ID, use -1 for uncategorized"),
     unlinked: bool = Query(False, description="Filter requirements without sprint"),
     assignee_id: Optional[int] = None,
     creator_id: Optional[int] = None,
@@ -97,6 +200,12 @@ def get_project_requirements(
         query = query.filter(Requirement.sprint_id == None)
     elif sprint_id is not None:
         query = query.filter(Requirement.sprint_id == sprint_id)
+    if category_id is not None:
+        if category_id == -1:
+            # -1 means uncategorized
+            query = query.filter(Requirement.category_id == None)
+        else:
+            query = query.filter(Requirement.category_id == category_id)
     if assignee_id is not None:
         query = query.filter(Requirement.assignee_id == assignee_id)
     if creator_id is not None:
@@ -171,7 +280,7 @@ def get_project_requirements(
 
     total = query.count()
     items = (
-        query.order_by(desc(Requirement.updated_at))
+        query.order_by(desc(Requirement.created_at))
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -267,6 +376,11 @@ def get_requirement(
         raise HTTPException(status_code=404, detail="Requirement not found")
 
     check_project_access(db, requirement.project_id, current_user)
+    
+    # 加载关联的任务
+    tasks = db.query(Task).filter(Task.requirement_id == requirement.id).all()
+    requirement.tasks = tasks
+    
     return requirement
 
 
@@ -285,37 +399,6 @@ def update_requirement(
     project = check_project_access(db, requirement.project_id, current_user)
     check_requirement_permission(requirement, current_user, project, "update")
 
-    # Status flow validation
-    if req_data.status and req_data.status != requirement.status:
-        valid_transitions = {
-            RequirementStatus.DRAFT: [
-                RequirementStatus.APPROVED,
-                RequirementStatus.CANCELLED,
-            ],
-            RequirementStatus.APPROVED: [
-                RequirementStatus.IN_PROGRESS,
-                RequirementStatus.CANCELLED,
-            ],
-            RequirementStatus.IN_PROGRESS: [
-                RequirementStatus.COMPLETED,
-                RequirementStatus.CANCELLED,
-            ],
-            RequirementStatus.COMPLETED: [],
-            RequirementStatus.CANCELLED: [],
-        }
-        if req_data.status not in valid_transitions.get(requirement.status, []):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid status transition from {requirement.status.value} to {req_data.status.value}",
-            )
-
-    # Completed requirement cannot edit core fields
-    if requirement.status == RequirementStatus.COMPLETED:
-        if req_data.title or req_data.description or req_data.priority:
-            raise HTTPException(
-                status_code=400,
-                detail="Cannot modify core fields of completed requirement",
-            )
 
     # Validate sprint if changing
     if req_data.sprint_id is not None:
@@ -334,9 +417,23 @@ def update_requirement(
         else:
             req_data.sprint_id = None
 
-    # Apply updates
+    # Apply updates and record history
     update_data = req_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
+        old_value = getattr(requirement, field)
+        # 记录历史（只记录有变更的字段）
+        if old_value != value:
+            # 处理枚举类型
+            old_str = old_value.value if hasattr(old_value, 'value') else str(old_value) if old_value is not None else None
+            new_str = value.value if hasattr(value, 'value') else str(value) if value is not None else None
+            history_entry = RequirementHistory(
+                requirement_id=requirement_id,
+                field=field,
+                old_value=old_str,
+                new_value=new_str,
+                changed_by=current_user.id,
+            )
+            db.add(history_entry)
         setattr(requirement, field, value)
 
     db.commit()
@@ -570,3 +667,41 @@ def delete_requirement_comment(
     db.delete(comment)
     db.commit()
     return None
+
+
+# History API
+@router.get("/api/requirements/{requirement_id}/history")
+def get_requirement_history(
+    requirement_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取需求操作历史"""
+    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
+    if not requirement:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+    
+    check_project_access(db, requirement.project_id, current_user)
+    
+    history = db.query(RequirementHistory).filter(
+        RequirementHistory.requirement_id == requirement_id
+    ).order_by(RequirementHistory.changed_at.desc()).all()
+    
+    # Build response with user info
+    result = []
+    for h in history:
+        user = db.query(User).filter(User.id == h.changed_by).first()
+        result.append({
+            "id": h.id,
+            "field": h.field,
+            "old_value": h.old_value,
+            "new_value": h.new_value,
+            "changed_by": h.changed_by,
+            "changed_at": h.changed_at.isoformat(),
+            "user": {
+                "id": user.id,
+                "username": user.username
+            } if user else None
+        })
+    
+    return result

@@ -31,9 +31,9 @@ def _create_default_project_and_bugs(db: Session, user: User) -> None:
     
     # Create default project
     project = Project(
-        name=f"{user.username}的示例项目",
+        name=f"{user.username}的示例空间",
         key=project_key,
-        description="这是系统为您自动创建的示例项目，包含一些示例Bug供您了解系统功能。您可以随时删除或修改这些内容。",
+        description="这是系统为您自动创建的示例空间，包含一些示例Bug供您了解系统功能。您可以随时删除或修改这些内容。",
         creator_id=user.id,
         bug_seq=0
     )

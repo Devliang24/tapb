@@ -52,6 +52,12 @@ export const taskService = {
   deleteComment: async (taskId, commentId) => {
     await api.delete(`/api/tasks/${taskId}/comments/${commentId}`);
   },
+
+  // 获取操作历史
+  getHistory: async (taskId) => {
+    const response = await api.get(`/api/tasks/${taskId}/history`);
+    return response.data;
+  },
 };
 
 export default taskService;

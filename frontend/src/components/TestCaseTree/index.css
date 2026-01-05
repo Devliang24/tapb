@@ -1,0 +1,60 @@
+.testcase-tree {
+  height: 100%;
+  background: #fff;
+  padding: 12px;
+  overflow: auto;
+}
+
+.tree-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tree-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #262626;
+}
+
+.add-root-btn {
+  cursor: pointer;
+  color: #8c8c8c;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.add-root-btn:hover {
+  color: #1890ff;
+  background: #e6f7ff;
+}
+
+.tree-node-title {
+  display: inline-block;
+  width: 100%;
+  padding: 2px 0;
+}
+
+.testcase-tree .ant-tree-node-content-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.testcase-tree .ant-tree-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.testcase-tree .ant-tree-treenode {
+  padding: 2px 0;
+}
+
+.testcase-tree .ant-tree-treenode-selected .ant-tree-node-content-wrapper {
+  background-color: #e6f7ff !important;
+}

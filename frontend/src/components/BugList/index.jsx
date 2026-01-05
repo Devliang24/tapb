@@ -398,7 +398,7 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
   ];
 
   return (
-    <div>
+    <div className="bug-list-wrapper">
       <div className="toolbar">
         <div className="toolbar-left">
           <Input.Search
@@ -505,6 +505,7 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
         rowSelection={{
           selectedRowKeys,
           onChange: setSelectedRowKeys,
+          columnWidth: 32,
         }}
         columns={columns}
         dataSource={bugData?.items || []}
