@@ -121,13 +121,12 @@
   min-width: 32px !important;
   max-width: 32px !important;
   text-align: left !important;
-  padding: 10px 0 10px 0 !important;
+  padding: 10px 0 10px 8px !important;
 }
 
 /* 复选框左贴边 */
 .req-compact .ant-table-selection {
   margin-right: 0 !important;
-  padding-left: 4px;
 }
 
 /* 仅在需求页减少标题列左边距 */
@@ -141,7 +140,9 @@
 .req-compact th.action-col {
   padding: 0 !important;
   text-align: center;
-  width: 24px;
+  width: 24px !important;
+  min-width: 24px !important;
+  max-width: 24px !important;
 }
 
 /* 需求页标题单元格内部间距更小 */
@@ -274,6 +275,7 @@
 /* 更紧凑的三点按钮（配合 action-col 宽度 24px） */
 .req-compact .action-dot {
   padding: 0 !important;
+  min-width: 24px !important;
 }
 
 .action-dot:hover {
