@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input, DatePicker, Timeline, Empty } from 'antd';
-import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, CodeOutlined, BugOutlined, HistoryOutlined, SendOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input, DatePicker, Timeline, Empty, Table } from 'antd';
+import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, CodeOutlined, BugOutlined, HistoryOutlined, SendOutlined, EditOutlined, DeleteOutlined, DisconnectOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import DetailDrawer from '../DetailDrawer';
@@ -23,7 +23,7 @@ const priorityOptions = [
   { value: 'low', label: '低', color: 'blue' },
 ];
 
-const TaskDetail = ({ taskId, visible, onClose, onUpdate }) => {
+const TaskDetail = ({ taskId, visible, onClose, onUpdate, onRequirementClick }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('detail');
   const [editedTitle, setEditedTitle] = useState('');
@@ -343,7 +343,8 @@ const { data: taskRequirement } = useQuery({
               value={newComment}
               onChange={(val) => setNewComment(val || '')}
               height={120}
-              placeholder="输入评论内容..."
+              placeholder="输入评论内容... (Cmd+Enter 发送)"
+              onSubmit={handleAddComment}
             />
           </div>
           <Button
@@ -409,6 +410,7 @@ const { data: taskRequirement } = useQuery({
                         value={editingCommentContent}
                         onChange={(val) => setEditingCommentContent(val || '')}
                         height={120}
+                        onSubmit={() => handleSaveComment(comment.id)}
                       />
                     </div>
                   ) : (
@@ -428,25 +430,68 @@ const { data: taskRequirement } = useQuery({
   );
 
   // 需求内容
-  const renderRequirementContent = () => (
-    <div>
-      {taskRequirement ? (
-        <div>
-          <div className="detail-drawer-section">
-            <div style={{ marginBottom: 8 }}>
-              <Tag color="blue">{taskRequirement.requirement_number}</Tag>
-              <span style={{ fontWeight: 500, marginLeft: 8 }}>{taskRequirement.title}</span>
-            </div>
-            <div className="detail-drawer-description">
-              <MarkdownRenderer content={taskRequirement.description} />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <Empty description="未关联需求" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-      )}
-    </div>
-  );
+  const renderRequirementContent = () => {
+    const reqList = taskRequirement ? [taskRequirement] : [];
+
+    const reqColumns = [
+      {
+        title: '编号',
+        dataIndex: 'requirement_number',
+        key: 'requirement_number',
+        width: 80,
+      },
+      {
+        title: '需求标题',
+        dataIndex: 'title',
+        key: 'title',
+        ellipsis: true,
+        render: (text, record) => (
+          <span 
+            onClick={(e) => { e.stopPropagation(); onRequirementClick?.(record.id); }} 
+            style={{ cursor: 'pointer', color: '#000' }}
+          >{text}</span>
+        ),
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 100,
+        render: (status) => {
+          const colors = { draft: 'default', approved: 'blue', in_progress: 'orange', completed: 'green', cancelled: 'red' };
+          const labels = { draft: '草稿', approved: '已批准', in_progress: '进行中', completed: '已完成', cancelled: '已取消' };
+          return <Tag color={colors[status]}>{labels[status] || status}</Tag>;
+        },
+      },
+      {
+        title: '优先级',
+        dataIndex: 'priority',
+        key: 'priority',
+        width: 80,
+        render: (priority) => {
+          const colors = { high: 'red', medium: 'orange', low: 'blue' };
+          const labels = { high: '高', medium: '中', low: '低' };
+          return <Tag color={colors[priority]}>{labels[priority]}</Tag>;
+        },
+      },
+    ];
+
+    return (
+      <div>
+        {reqList.length > 0 ? (
+          <Table
+            columns={reqColumns}
+            dataSource={reqList}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="未关联需求" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    );
+  };
 
   // 字段名称映射
   const fieldLabels = {
@@ -530,6 +575,7 @@ const { data: taskRequirement } = useQuery({
     {
       key: 'requirement',
       label: '需求',
+      badge: taskRequirement ? 1 : 0,
       children: renderRequirementContent(),
     },
     {

@@ -4,6 +4,7 @@ import { SearchOutlined, EllipsisOutlined, FolderOutlined } from '@ant-design/ic
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import testCaseService from '../../services/testCaseService';
 import projectService from '../../services/projectService';
+import sprintService from '../../services/sprintService';
 import './index.css';
 
 const { confirm } = Modal;
@@ -27,15 +28,15 @@ const typeLabels = {
 };
 
 const statusColors = {
-  PASSED: 'green',
-  FAILED: 'red',
-  NOT_EXECUTED: 'default',
+  passed: 'green',
+  failed: 'red',
+  not_executed: 'default',
 };
 
 const statusLabels = {
-  PASSED: '通过',
-  FAILED: '不通过',
-  NOT_EXECUTED: '未执行',
+  passed: '通过',
+  failed: '不通过',
+  not_executed: '未执行',
 };
 
 const priorityColors = {
@@ -83,6 +84,12 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
     enabled: !!projectId,
   });
 
+  const { data: sprints } = useQuery({
+    queryKey: ['sprints', projectId],
+    queryFn: () => sprintService.getSprints(projectId),
+    enabled: !!projectId,
+  });
+
   // 构建目录树数据
   const buildCategoryTree = (items, parentId = null) => {
     return items
@@ -96,7 +103,7 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
   };
 
   const categoryTreeData = [
-    { value: null, title: '未分类', icon: <FolderOutlined /> },
+    { value: 0, title: '未分类', icon: <FolderOutlined /> },
     ...buildCategoryTree(categories),
   ];
 
@@ -139,7 +146,7 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
       project_id: testCase.project_id,
       name: `${testCase.name} (复制)`,
       type: testCase.type,
-      status: 'NOT_EXECUTED',
+      status: 'not_executed',
       priority: testCase.priority,
       category_id: testCase.category_id,
       precondition: testCase.precondition,
@@ -182,7 +189,7 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
   };
 
   const handleMove = (testCaseId, newCategoryId) => {
-    updateMutation.mutate({ id: testCaseId, data: { category_id: newCategoryId } });
+    updateMutation.mutate({ id: testCaseId, data: { category_id: newCategoryId === 0 ? null : newCategoryId } });
   };
 
   const handleBatchMove = () => {
@@ -192,7 +199,7 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
     }
     Promise.all(
       selectedRowKeys.map(id => 
-        testCaseService.updateTestCase(id, { category_id: targetCategoryId })
+        testCaseService.updateTestCase(id, { category_id: targetCategoryId === 0 ? null : targetCategoryId })
       )
     ).then(() => {
       message.success('批量移动成功');
@@ -329,6 +336,38 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
           {Object.entries(priorityLabels).map(([key, label]) => (
             <Select.Option key={key} value={key}>
               <Tag color={priorityColors[key]} style={{ margin: 0 }}>{label}</Tag>
+            </Select.Option>
+          ))}
+        </Select>
+      ),
+    },
+    {
+      title: '所属目录',
+      dataIndex: 'category',
+      key: 'category',
+      width: 100,
+      render: (category) => category?.name || '未分类',
+    },
+    {
+      title: '迭代',
+      dataIndex: 'sprint',
+      key: 'sprint',
+      width: 180,
+      render: (sprint, record) => (
+        <Select
+          size="small"
+          variant="borderless"
+          suffixIcon={null}
+          value={record.sprint_id}
+          style={{ width: 170 }}
+          placeholder="未设置"
+          allowClear
+          onChange={(value) => handleFieldChange(record.id, 'sprint_id', value)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {sprints?.items?.map((s) => (
+            <Select.Option key={s.id} value={s.id}>
+              {s.name}
             </Select.Option>
           ))}
         </Select>

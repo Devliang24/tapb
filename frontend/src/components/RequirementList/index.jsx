@@ -332,6 +332,7 @@ const RequirementList = ({
         status: req.status,
         priority: req.priority,
         assignee: req.assignee,
+        sprint: req.sprint,
         start_date: req.start_date,
         end_date: req.end_date,
         created_at: req.created_at,
@@ -397,6 +398,7 @@ const RequirementList = ({
       status: req.status,
       priority: req.priority,
       assignee: req.assignee,
+      sprint: req.sprint,
       start_date: req.start_date,
       end_date: req.end_date,
       created_at: req.created_at,
@@ -548,9 +550,6 @@ const RequirementList = ({
               >
                 {record.title}
               </a>
-              {record.children_count > 0 && (
-                <span className="children-count">({record.children_count})</span>
-              )}
             </div>
           );
         } else if (record.type === 'task') {
@@ -688,6 +687,16 @@ const RequirementList = ({
       width: 100,
       render: (_, record) => {
         return record.assignee?.username || '-';
+      },
+    },
+    {
+      title: '迭代',
+      key: 'sprint',
+      width: 180,
+      ellipsis: true,
+      render: (_, record) => {
+        if (record.type !== 'story') return '-';
+        return record.sprint?.name || '-';
       },
     },
     {

@@ -26,6 +26,8 @@ def get_testcases(
     page_size: int = Query(20, ge=1, le=100),
     project_id: Optional[int] = None,
     category_id: Optional[int] = None,
+    requirement_id: Optional[int] = None,
+    sprint_id: Optional[int] = None,
     type: Optional[str] = None,
     status: Optional[str] = None,
     priority: Optional[str] = None,
@@ -51,6 +53,10 @@ def get_testcases(
         query = query.filter(TestCase.project_id == project_id)
     if category_id:
         query = query.filter(TestCase.category_id == category_id)
+    if requirement_id:
+        query = query.filter(TestCase.requirement_id == requirement_id)
+    if sprint_id:
+        query = query.filter(TestCase.sprint_id == sprint_id)
     if type:
         query = query.filter(TestCase.type == type)
     if status:
@@ -105,6 +111,7 @@ def create_testcase(
         project_id=testcase_data.project_id,
         category_id=testcase_data.category_id,
         requirement_id=testcase_data.requirement_id,
+        sprint_id=testcase_data.sprint_id,
         case_number="TEMP",  # Will be updated after getting ID
         name=testcase_data.name,
         type=testcase_data.type,

@@ -293,6 +293,7 @@ const SprintIterations = () => {
         visible={!!detailTaskId}
         onClose={() => setDetailTaskId(null)}
         onUpdate={handleTaskUpdate}
+        onRequirementClick={(reqId) => { setDetailTaskId(null); setDetailReqId(reqId); }}
       />
 
       <BugDetail
@@ -305,6 +306,8 @@ const SprintIterations = () => {
         onNext={() => currentBugIndex < bugIds.length - 1 && setDetailBugId(bugIds[currentBugIndex + 1])}
         hasPrev={currentBugIndex > 0}
         hasNext={currentBugIndex < bugIds.length - 1 && currentBugIndex >= 0}
+        onRequirementClick={(reqId) => { setDetailBugId(null); setDetailReqId(reqId); }}
+        onTestCaseClick={(caseId) => { setDetailBugId(null); setDetailTestCaseId(caseId); }}
       />
 
       <TestCaseDetail
@@ -316,6 +319,8 @@ const SprintIterations = () => {
         onNext={() => currentTestCaseIndex < testCaseIds.length - 1 && setDetailTestCaseId(testCaseIds[currentTestCaseIndex + 1])}
         hasPrev={currentTestCaseIndex > 0}
         hasNext={currentTestCaseIndex < testCaseIds.length - 1 && currentTestCaseIndex >= 0}
+        onRequirementClick={(reqId) => { setDetailTestCaseId(null); setDetailReqId(reqId); }}
+        onBugClick={(bugId) => { setDetailTestCaseId(null); setDetailBugId(bugId); }}
       />
     </div>
   );

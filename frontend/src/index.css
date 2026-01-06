@@ -10,3 +10,8 @@ body {
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
+
+/* Remove bold from table headers */
+.ant-table-thead > tr > th {
+  font-weight: normal !important;
+}

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Tag, Button, Select, message, Modal, Popconfirm, TreeSelect, Timeline, Empty } from 'antd';
-import { DeleteOutlined, CopyOutlined, FolderOutlined, UserOutlined, CalendarOutlined, ClockCircleOutlined, HistoryOutlined } from '@ant-design/icons';
+import { Tag, Button, Select, message, Modal, Popconfirm, TreeSelect, Timeline, Empty, Table } from 'antd';
+import { DeleteOutlined, CopyOutlined, FolderOutlined, UserOutlined, CalendarOutlined, ClockCircleOutlined, HistoryOutlined, LinkOutlined, BugOutlined, FieldTimeOutlined, DisconnectOutlined } from '@ant-design/icons';
 import MarkdownRenderer from '../MarkdownRenderer';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DetailDrawer from '../DetailDrawer';
 import RichTextEditor from '../MarkdownEditor';
 import testCaseService from '../../services/testCaseService';
+import bugService from '../../services/bugService';
+import requirementService from '../../services/requirementService';
+import sprintService from '../../services/sprintService';
 import './index.css';
 
 // HTML 内容渲染组件
@@ -37,7 +40,7 @@ const priorityOptions = [
   { value: 'low', label: '低', color: 'default' },
 ];
 
-const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, hasPrev, hasNext }) => {
+const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, hasPrev, hasNext, onRequirementClick, onBugClick }) => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('detail');
@@ -49,6 +52,9 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
   const [editedSteps, setEditedSteps] = useState('');
   const [editedExpectedResult, setEditedExpectedResult] = useState('');
   const [editedCategoryId, setEditedCategoryId] = useState(null);
+  const [editedRequirementId, setEditedRequirementId] = useState(null);
+  const [editedSprintId, setEditedSprintId] = useState(null);
+  const [editedBugIds, setEditedBugIds] = useState([]);
 
   const { data: testCase, isLoading } = useQuery({
     queryKey: ['testcase', testCaseId],
@@ -71,6 +77,34 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
     enabled: !!testCaseId && open,
   });
 
+  // 获取关联缺陷
+  const { data: bugs } = useQuery({
+    queryKey: ['testcaseBugs', testCaseId],
+    queryFn: () => bugService.getBugs({ testcase_id: testCaseId }),
+    enabled: !!testCaseId && open,
+  });
+
+  // 获取项目需求列表
+  const { data: requirements } = useQuery({
+    queryKey: ['requirements', effectiveProjectId],
+    queryFn: () => requirementService.getRequirements(effectiveProjectId, { page_size: 100 }),
+    enabled: !!effectiveProjectId && open,
+  });
+
+  // 获取项目迭代列表
+  const { data: sprints } = useQuery({
+    queryKey: ['sprints', effectiveProjectId],
+    queryFn: () => sprintService.getSprints(effectiveProjectId),
+    enabled: !!effectiveProjectId && open,
+  });
+
+  // 获取项目所有缺陷（用于编辑时选择关联）
+  const { data: allBugs } = useQuery({
+    queryKey: ['allBugs', effectiveProjectId],
+    queryFn: () => bugService.getBugs({ project_id: effectiveProjectId, page_size: 100 }),
+    enabled: !!effectiveProjectId && open,
+  });
+
   // 构建目录树数据
   const buildCategoryTree = (items, parentId = null) => {
     return items
@@ -83,7 +117,7 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
   };
 
   const categoryTreeData = [
-    { value: null, title: '未分类' },
+    { value: 0, title: '未分类' },
     ...buildCategoryTree(categories),
   ];
 
@@ -97,9 +131,18 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
       setEditedPrecondition(testCase.precondition || '');
       setEditedSteps(testCase.steps || '');
       setEditedExpectedResult(testCase.expected_result || '');
-      setEditedCategoryId(testCase.category_id);
+      setEditedCategoryId(testCase.category_id ?? 0);
+      setEditedRequirementId(testCase.requirement_id);
+      setEditedSprintId(testCase.sprint_id);
     }
   }, [testCase]);
+
+  // 初始化编辑状态时设置已关联的缺陷 IDs
+  useEffect(() => {
+    if (bugs?.items) {
+      setEditedBugIds(bugs.items.map(bug => bug.id));
+    }
+  }, [bugs]);
 
   // 关闭抽屉时重置编辑状态
   useEffect(() => {
@@ -139,7 +182,7 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
       project_id: testCase.project_id,
       name: `${testCase.name} (复制)`,
       type: testCase.type,
-      status: 'NOT_EXECUTED',
+      status: 'not_executed',
       priority: testCase.priority,
       category_id: testCase.category_id,
       precondition: testCase.precondition,
@@ -155,7 +198,34 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
     },
   });
 
-  const handleSave = () => {
+  // 移除缺陷关联
+  const unlinkBugMutation = useMutation({
+    mutationFn: (bugId) => bugService.updateBug(bugId, { testcase_id: null }),
+    onSuccess: () => {
+      message.success('已移除关联');
+      queryClient.invalidateQueries(['testcaseBugs', testCaseId]);
+      queryClient.invalidateQueries(['allBugs', effectiveProjectId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '移除失败');
+    },
+  });
+
+  // 关联缺陷
+  const linkBugMutation = useMutation({
+    mutationFn: (bugId) => bugService.updateBug(bugId, { testcase_id: testCaseId }),
+    onSuccess: () => {
+      message.success('关联成功');
+      queryClient.invalidateQueries(['testcaseBugs', testCaseId]);
+      queryClient.invalidateQueries(['allBugs', effectiveProjectId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '关联失败');
+    },
+  });
+
+  const handleSave = async () => {
+    // 更新用例基本信息
     updateMutation.mutate({
       name: editedName,
       type: editedType,
@@ -164,8 +234,32 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
       precondition: editedPrecondition,
       steps: editedSteps,
       expected_result: editedExpectedResult,
-      category_id: editedCategoryId,
+      category_id: editedCategoryId === 0 ? null : editedCategoryId,
+      requirement_id: editedRequirementId || null,
+      sprint_id: editedSprintId || null,
     });
+
+    // 处理缺陷关联变化
+    const currentBugIds = (bugs?.items || []).map(bug => bug.id);
+    const toLink = editedBugIds.filter(id => !currentBugIds.includes(id));
+    const toUnlink = currentBugIds.filter(id => !editedBugIds.includes(id));
+
+    try {
+      // 关联新缺陷
+      await Promise.all(toLink.map(bugId => 
+        bugService.updateBug(bugId, { testcase_id: testCaseId })
+      ));
+      // 取消关联
+      await Promise.all(toUnlink.map(bugId => 
+        bugService.updateBug(bugId, { testcase_id: null })
+      ));
+      if (toLink.length > 0 || toUnlink.length > 0) {
+        queryClient.invalidateQueries(['testcaseBugs', testCaseId]);
+        queryClient.invalidateQueries(['allBugs', effectiveProjectId]);
+      }
+    } catch (error) {
+      message.error('缺陷关联更新失败');
+    }
   };
 
   const handleCancelEdit = () => {
@@ -178,6 +272,12 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
       setEditedSteps(testCase.steps || '');
       setEditedExpectedResult(testCase.expected_result || '');
       setEditedCategoryId(testCase.category_id);
+      setEditedRequirementId(testCase.requirement_id);
+      setEditedSprintId(testCase.sprint_id);
+    }
+    // 重置缺陷关联
+    if (bugs?.items) {
+      setEditedBugIds(bugs.items.map(bug => bug.id));
     }
     setIsEditing(false);
   };
@@ -206,6 +306,11 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
     const opt = priorityOptions.find(o => o.value === priority);
     return opt ? <Tag color={opt.color}>{opt.label}</Tag> : priority;
   };
+
+  // 获取可选择的缺陷（未关联其他用例的缺陷 + 已关联当前用例的缺陷）
+  const availableBugs = (allBugs?.items || []).filter(
+    bug => !bug.testcase_id || bug.testcase_id === testCaseId
+  );
 
   // 构建右侧边栏信息
   const sidebarItems = testCase ? [
@@ -250,6 +355,77 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
           treeLine
         />
       ) : (testCase.category?.name || '未分类'),
+    },
+    {
+      label: '迭代',
+      icon: <FieldTimeOutlined />,
+      value: isEditing ? (
+        <Select
+          value={editedSprintId}
+          onChange={setEditedSprintId}
+          style={{ width: '100%' }}
+          size="small"
+          placeholder="选择迭代"
+          allowClear
+          showSearch
+          optionFilterProp="children"
+        >
+          {sprints?.items?.map(sprint => (
+            <Select.Option key={sprint.id} value={sprint.id}>
+              {sprint.name}
+            </Select.Option>
+          ))}
+        </Select>
+      ) : testCase.sprint?.name || '-',
+    },
+    {
+      label: '关联需求',
+      icon: <LinkOutlined />,
+      value: isEditing ? (
+        <Select
+          value={editedRequirementId}
+          onChange={setEditedRequirementId}
+          style={{ width: '100%' }}
+          size="small"
+          placeholder="选择需求"
+          allowClear
+          showSearch
+          optionFilterProp="children"
+        >
+          {requirements?.items?.map(req => (
+            <Select.Option key={req.id} value={req.id}>
+              {req.requirement_number} - {req.title}
+            </Select.Option>
+          ))}
+        </Select>
+      ) : testCase.requirement ? (
+        <Tag color="blue">{testCase.requirement.requirement_number}</Tag>
+      ) : '-',
+    },
+    {
+      label: '关联缺陷',
+      icon: <BugOutlined />,
+      value: isEditing ? (
+        <Select
+          mode="multiple"
+          value={editedBugIds}
+          onChange={setEditedBugIds}
+          style={{ width: '100%' }}
+          size="small"
+          placeholder="选择缺陷"
+          showSearch
+          optionFilterProp="children"
+          maxTagCount={2}
+        >
+          {availableBugs.map(bug => (
+            <Select.Option key={bug.id} value={bug.id}>
+              {bug.bug_number} - {bug.title}
+            </Select.Option>
+          ))}
+        </Select>
+      ) : bugs?.items?.length > 0 ? (
+        <Tag color="orange">{bugs.items.length} 个</Tag>
+      ) : '-',
     },
     {
       label: '创建人',
@@ -333,21 +509,215 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
     </div>
   );
 
+  // 移除需求关联
+  const unlinkRequirementMutation = useMutation({
+    mutationFn: () => testCaseService.updateTestCase(testCaseId, { requirement_id: null }),
+    onSuccess: () => {
+      message.success('已移除关联');
+      queryClient.invalidateQueries(['testcase', testCaseId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '移除失败');
+    },
+  });
+
+  // 关联需求
+  const linkRequirementMutation = useMutation({
+    mutationFn: (requirementId) => testCaseService.updateTestCase(testCaseId, { requirement_id: requirementId }),
+    onSuccess: () => {
+      message.success('关联成功');
+      queryClient.invalidateQueries(['testcase', testCaseId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '关联失败');
+    },
+  });
+
   // 需求内容
-  const renderRequirementContent = () => (
-    <div>
-      {testCase?.requirement ? (
-        <div className="detail-drawer-section">
-          <div style={{ marginBottom: 8 }}>
-            <Tag color="blue">{testCase.requirement.requirement_number}</Tag>
-            <span style={{ fontWeight: 500, marginLeft: 8 }}>{testCase.requirement.title}</span>
-          </div>
+  const renderRequirementContent = () => {
+    const reqList = testCase?.requirement ? [testCase.requirement] : [];
+    // 可关联的需求：所有需求（排除已关联的）
+    const linkableReqs = (requirements?.items || []).filter(
+      req => req.id !== testCase?.requirement_id
+    );
+    const reqOptions = linkableReqs.map(r => ({
+      value: r.id,
+      label: `${r.requirement_number} ${r.title}`,
+    }));
+
+    const reqColumns = [
+      {
+        title: '编号',
+        dataIndex: 'requirement_number',
+        key: 'requirement_number',
+        width: 80,
+      },
+      {
+        title: '需求标题',
+        dataIndex: 'title',
+        key: 'title',
+        ellipsis: true,
+        render: (text, record) => (
+          <span 
+            onClick={(e) => { e.stopPropagation(); onRequirementClick?.(record.id); }} 
+            style={{ cursor: 'pointer', color: '#000' }}
+          >{text}</span>
+        ),
+      },
+      {
+        title: '操作',
+        key: 'action',
+        width: 60,
+        render: (_, record) => (
+          <Button 
+            type="text" 
+            size="small" 
+            danger 
+            icon={<DisconnectOutlined />} 
+            title="移除关联"
+            onClick={() => unlinkRequirementMutation.mutate()}
+          />
+        ),
+      },
+    ];
+
+    return (
+      <div>
+        <div style={{ marginBottom: 12 }}>
+          <Select
+            showSearch
+            placeholder="搜索并关联需求"
+            style={{ width: '100%' }}
+            value={null}
+            filterOption={(input, option) =>
+              option.label.toLowerCase().includes(input.toLowerCase())
+            }
+            onSelect={(value) => linkRequirementMutation.mutate(value)}
+            options={reqOptions}
+            loading={linkRequirementMutation.isPending}
+            notFoundContent="暂无可关联的需求"
+          />
         </div>
-      ) : (
-        <Empty description="未关联需求" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-      )}
-    </div>
-  );
+        {reqList.length > 0 ? (
+          <Table
+            columns={reqColumns}
+            dataSource={reqList}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="未关联需求" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    );
+  };
+
+  // 缺陷列表内容
+  const bugStatusOptions = [
+    { value: 'new', label: '新建', color: 'blue' },
+    { value: 'confirmed', label: '已确认', color: 'orange' },
+    { value: 'in_progress', label: '处理中', color: 'purple' },
+    { value: 'resolved', label: '已解决', color: 'green' },
+    { value: 'closed', label: '已关闭', color: 'default' },
+    { value: 'reopened', label: '重新打开', color: 'red' },
+  ];
+
+  const renderBugsContent = () => {
+    const bugList = bugs?.items || [];
+    // 可关联的缺陷：未关联其他用例的缺陷
+    const linkableBugs = (allBugs?.items || []).filter(
+      bug => !bug.testcase_id
+    );
+    const bugOptions = linkableBugs.map(b => ({
+      value: b.id,
+      label: `${b.bug_number} ${b.title}`,
+    }));
+
+    const bugColumns = [
+      {
+        title: '编号',
+        dataIndex: 'bug_number',
+        key: 'bug_number',
+        width: 80,
+      },
+      {
+        title: '缺陷标题',
+        dataIndex: 'title',
+        key: 'title',
+        ellipsis: true,
+        render: (text, record) => (
+          <span 
+            onClick={(e) => { e.stopPropagation(); onBugClick?.(record.id); }} 
+            style={{ cursor: 'pointer', color: '#000' }}
+          >{text}</span>
+        ),
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 100,
+        render: (status) => {
+          const opt = bugStatusOptions.find(o => o.value === status);
+          return opt ? <Tag color={opt.color}>{opt.label}</Tag> : status;
+        },
+      },
+      {
+        title: '处理人',
+        dataIndex: ['assignee', 'username'],
+        key: 'assignee',
+        width: 100,
+        render: (text) => text || '-',
+      },
+      {
+        title: '操作',
+        key: 'action',
+        width: 60,
+        render: (_, record) => (
+          <Button 
+            type="text" 
+            size="small" 
+            danger 
+            icon={<DisconnectOutlined />} 
+            title="移除关联"
+            onClick={() => unlinkBugMutation.mutate(record.id)}
+          />
+        ),
+      },
+    ];
+
+    return (
+      <div>
+        <div style={{ marginBottom: 12 }}>
+          <Select
+            showSearch
+            placeholder="搜索并关联缺陷"
+            style={{ width: '100%' }}
+            value={null}
+            filterOption={(input, option) =>
+              option.label.toLowerCase().includes(input.toLowerCase())
+            }
+            onSelect={(value) => linkBugMutation.mutate(value)}
+            options={bugOptions}
+            loading={linkBugMutation.isPending}
+            notFoundContent="暂无可关联的缺陷"
+          />
+        </div>
+        {bugList.length > 0 ? (
+          <Table
+            columns={bugColumns}
+            dataSource={bugList}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="暂无关联缺陷" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    );
+  };
 
   // 字段名称映射
   const fieldLabels = {
@@ -444,7 +814,14 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
     {
       key: 'requirement',
       label: '需求',
+      badge: testCase?.requirement ? 1 : 0,
       children: renderRequirementContent(),
+    },
+    {
+      key: 'bugs',
+      label: '缺陷',
+      badge: bugs?.items?.length || 0,
+      children: renderBugsContent(),
     },
     {
       key: 'history',

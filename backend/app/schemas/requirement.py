@@ -46,6 +46,14 @@ class UserBrief(BaseModel):
         from_attributes = True
 
 
+class SprintBrief(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class RequirementResponse(RequirementBase):
     id: int
     project_id: int
@@ -64,6 +72,7 @@ class RequirementResponse(RequirementBase):
     assignee: Optional[UserBrief] = None
     developer: Optional[UserBrief] = None
     tester: Optional[UserBrief] = None
+    sprint: Optional[SprintBrief] = None
     tasks: List[TaskResponse] = []  # 关联的 Task 列表
     bugs: List[BugResponse] = []  # 关联的 Bug 列表
 
@@ -83,6 +92,7 @@ class RequirementDetailResponse(RequirementBase):
     updated_at: datetime
     creator: Optional[UserBrief] = None
     assignee: Optional[UserBrief] = None
+    sprint: Optional[SprintBrief] = None
     tasks: List[TaskResponse] = []  # 关联的 Task 列表
 
     class Config:

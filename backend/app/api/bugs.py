@@ -31,6 +31,7 @@ def get_bugs(
     severity: Optional[str] = None,
     sprint_id: Optional[int] = None,
     requirement_id: Optional[int] = None,
+    testcase_id: Optional[int] = None,
     assignee_id: Optional[int] = None,
     creator_id: Optional[int] = None,
     search: Optional[str] = None,
@@ -62,6 +63,8 @@ def get_bugs(
         query = query.filter(Bug.sprint_id == sprint_id)
     if requirement_id:
         query = query.filter(Bug.requirement_id == requirement_id)
+    if testcase_id:
+        query = query.filter(Bug.testcase_id == testcase_id)
     if assignee_id:
         query = query.filter(Bug.assignee_id == assignee_id)
     if creator_id:

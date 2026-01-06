@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Drawer, Form, Input, Select, TreeSelect, Button, Space, Row, Col, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import testCaseService from '../../services/testCaseService';
+import requirementService from '../../services/requirementService';
+import sprintService from '../../services/sprintService';
 import MarkdownEditor from '../MarkdownEditor';
 import './index.css';
 
@@ -15,9 +17,9 @@ const typeOptions = [
 ];
 
 const statusOptions = [
-  { value: 'PASSED', label: '通过' },
-  { value: 'FAILED', label: '不通过' },
-  { value: 'NOT_EXECUTED', label: '未执行' },
+  { value: 'passed', label: '通过' },
+  { value: 'failed', label: '不通过' },
+  { value: 'not_executed', label: '未执行' },
 ];
 
 const priorityOptions = [
@@ -50,6 +52,18 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
     enabled: !!projectId,
   });
 
+  const { data: requirements } = useQuery({
+    queryKey: ['requirements', projectId],
+    queryFn: () => requirementService.getRequirements(projectId, { page_size: 100 }),
+    enabled: !!projectId,
+  });
+
+  const { data: sprints = [] } = useQuery({
+    queryKey: ['sprints', projectId],
+    queryFn: () => sprintService.getSprints(projectId),
+    enabled: !!projectId,
+  });
+
   // 构建目录树数据
   const buildTreeData = (items, parentId = null) => {
     return items
@@ -62,7 +76,7 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
   };
 
   const treeData = [
-    { value: null, title: '未分类', children: [] },
+    { value: 0, title: '未分类', children: [] },
     ...buildTreeData(categories),
   ];
 
@@ -75,6 +89,8 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
           status: testCase.status,
           priority: testCase.priority,
           category_id: testCase.category_id,
+          requirement_id: testCase.requirement_id,
+          sprint_id: testCase.sprint_id,
         });
         setPrecondition(testCase.precondition || defaultPrecondition);
         setSteps(testCase.steps || defaultSteps);
@@ -83,9 +99,9 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
         form.resetFields();
         form.setFieldsValue({
           type: 'functional',
-          status: 'NOT_EXECUTED',
+          status: 'not_executed',
           priority: 'medium',
-          category_id: categoryId || null,
+          category_id: categoryId || 0,
         });
         setPrecondition(defaultPrecondition);
         setSteps(defaultSteps);
@@ -105,6 +121,10 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
         steps,
         expected_result: expectedResult,
         project_id: projectId,
+        // 将 0 转换回 null（未分类）
+        category_id: values.category_id === 0 ? null : values.category_id,
+        requirement_id: values.requirement_id || null,
+        sprint_id: values.sprint_id || null,
       };
 
       if (testCaseId) {
@@ -123,9 +143,9 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
         form.resetFields();
         form.setFieldsValue({
           type: 'functional',
-          status: 'NOT_EXECUTED',
+          status: 'not_executed',
           priority: 'medium',
-          category_id: categoryId || null,
+          category_id: categoryId || 0,
         });
         setPrecondition(defaultPrecondition);
         setSteps(defaultSteps);
@@ -135,7 +155,9 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
       }
     } catch (error) {
       if (error.response) {
-        message.error(error.response?.data?.detail || '操作失败');
+        const detail = error.response?.data?.detail;
+        const errorMsg = typeof detail === 'string' ? detail : (Array.isArray(detail) ? detail.map(d => d.msg).join(', ') : '操作失败');
+        message.error(errorMsg);
       }
     } finally {
       setLoading(false);
@@ -217,6 +239,47 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
                 allowClear
                 treeDefaultExpandAll
               />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="requirement_id"
+              label="关联需求"
+            >
+              <Select
+                placeholder="请选择关联需求"
+                allowClear
+                showSearch
+                optionFilterProp="children"
+              >
+                {requirements?.items?.map(req => (
+                  <Select.Option key={req.id} value={req.id}>
+                    {req.requirement_number} - {req.title}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="sprint_id"
+              label="关联迭代"
+            >
+              <Select
+                placeholder="请选择关联迭代"
+                allowClear
+                showSearch
+                optionFilterProp="children"
+              >
+                {sprints?.items?.map(sprint => (
+                  <Select.Option key={sprint.id} value={sprint.id}>
+                    {sprint.name}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
           </Col>
         </Row>

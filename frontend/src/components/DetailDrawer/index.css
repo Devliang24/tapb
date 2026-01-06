@@ -224,7 +224,7 @@
 
 .detail-drawer-sidebar-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   padding: 10px 20px;
   font-size: 13px;
 }
@@ -245,8 +245,16 @@
 
 .detail-drawer-sidebar-value {
   flex: 1;
+  min-width: 0;
   color: #1f2937;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-drawer-sidebar-value .ant-select {
+  width: 100%;
+  max-width: 100%;
 }
 
 /* 加载状态 */

@@ -5,6 +5,8 @@ import TestCaseTree from '../components/TestCaseTree';
 import TestCaseList from '../components/TestCaseList';
 import TestCaseForm from '../components/TestCaseForm';
 import TestCaseDetail from '../components/TestCaseDetail';
+import RequirementDetail from '../components/RequirementDetail';
+import BugDetail from '../components/BugDetail';
 import testCaseService from '../services/testCaseService';
 import './ProjectTestCases.css';
 
@@ -15,6 +17,8 @@ const ProjectTestCases = () => {
   const [editingId, setEditingId] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [viewingId, setViewingId] = useState(null);
+  const [detailRequirementId, setDetailRequirementId] = useState(null);
+  const [detailBugId, setDetailBugId] = useState(null);
 
   const handleCreateClick = () => {
     setEditingId(null);
@@ -87,6 +91,23 @@ const ProjectTestCases = () => {
         onNext={() => currentIndex < testCaseIds.length - 1 && setViewingId(testCaseIds[currentIndex + 1])}
         hasPrev={currentIndex > 0}
         hasNext={currentIndex < testCaseIds.length - 1 && currentIndex >= 0}
+        onRequirementClick={(reqId) => setDetailRequirementId(reqId)}
+        onBugClick={(bugId) => setDetailBugId(bugId)}
+      />
+
+      <RequirementDetail
+        requirementId={detailRequirementId}
+        visible={!!detailRequirementId}
+        onClose={() => setDetailRequirementId(null)}
+      />
+
+      <BugDetail
+        bugId={detailBugId}
+        visible={!!detailBugId}
+        onClose={() => setDetailBugId(null)}
+        projectId={parseInt(projectId)}
+        onRequirementClick={(reqId) => setDetailRequirementId(reqId)}
+        onTestCaseClick={(caseId) => { setDetailBugId(null); setViewingId(caseId); setDetailOpen(true); }}
       />
     </div>
   );

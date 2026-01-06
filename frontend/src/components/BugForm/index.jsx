@@ -83,6 +83,7 @@ const BugForm = ({ visible, onClose, onSuccess, projectId }) => {
       open={visible}
       onClose={onClose}
       closable={false}
+      maskClosable={false}
       width="55%"
       extra={
         <Space>

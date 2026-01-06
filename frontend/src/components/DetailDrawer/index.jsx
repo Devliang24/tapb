@@ -72,26 +72,47 @@ const DetailDrawer = ({
   const drawerRef = useRef(null);
 
   // 点击抽屉外部关闭
+  // 记录最近是否有弹出层交互
+  const recentPopupInteraction = useRef(false);
+
   useEffect(() => {
     if (!visible) return;
 
+    // 监听弹出层的 mousedown，记录交互
+    const handlePopupMouseDown = (event) => {
+      const isInPopup = event.target.closest('.ant-select-dropdown, .ant-popover, .ant-popconfirm, .ant-dropdown, .ant-modal, .ant-picker-dropdown, .ant-tree-select-dropdown');
+      if (isInPopup) {
+        recentPopupInteraction.current = true;
+        // 500ms 后重置
+        setTimeout(() => {
+          recentPopupInteraction.current = false;
+        }, 500);
+      }
+    };
+
     const handleClickOutside = (event) => {
+      // 如果最近有弹出层交互，跳过
+      if (recentPopupInteraction.current) {
+        return;
+      }
       // 检查点击是否在抽屉内部
       const drawerContent = document.querySelector('.ant-drawer-content-wrapper');
-      // 排除下拉菜单、弹出层等
-      const isInDropdown = event.target.closest('.ant-select-dropdown, .ant-popover, .ant-popconfirm, .ant-dropdown');
-      if (drawerContent && !drawerContent.contains(event.target) && !isInDropdown) {
+      // 排除下拉菜单、弹出层、模态框等
+      const isInPopup = event.target.closest('.ant-select-dropdown, .ant-popover, .ant-popconfirm, .ant-dropdown, .ant-modal, .ant-picker-dropdown, .ant-tree-select-dropdown');
+      if (drawerContent && !drawerContent.contains(event.target) && !isInPopup) {
         onClose?.();
       }
     };
 
     // 延迟添加事件监听，避免立即触发
     const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handlePopupMouseDown);
       document.addEventListener('click', handleClickOutside);
     }, 200);
 
     return () => {
       clearTimeout(timer);
+      document.removeEventListener('mousedown', handlePopupMouseDown);
       document.removeEventListener('click', handleClickOutside);
     };
   }, [visible, onClose]);

@@ -1,6 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, or_
 
 from app.database import get_db
@@ -280,7 +280,8 @@ def get_project_requirements(
 
     total = query.count()
     items = (
-        query.order_by(desc(Requirement.created_at))
+        query.options(joinedload(Requirement.sprint))
+        .order_by(desc(Requirement.created_at))
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()

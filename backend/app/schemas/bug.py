@@ -18,6 +18,7 @@ class BugCreate(BugBase):
     assignee_id: Optional[int] = None
     sprint_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    testcase_id: Optional[int] = None
     environment: Optional[BugEnvironment] = None
     defect_cause: Optional[BugCause] = None
 
@@ -31,6 +32,7 @@ class BugUpdate(BaseModel):
     assignee_id: Optional[int] = None
     sprint_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    testcase_id: Optional[int] = None
     environment: Optional[BugEnvironment] = None
     defect_cause: Optional[BugCause] = None
 
@@ -56,6 +58,7 @@ class BugResponse(BugBase):
     project_id: int
     sprint_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    testcase_id: Optional[int] = None
     bug_number: str
     status: BugStatus
     creator_id: int
@@ -108,11 +111,21 @@ class RequirementBrief(BaseModel):
         from_attributes = True
 
 
+class TestCaseBrief(BaseModel):
+    id: int
+    case_number: str
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class BugDetailResponse(BugBase):
     id: int
     project_id: int
     sprint_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    testcase_id: Optional[int] = None
     bug_number: str
     status: BugStatus
     creator_id: int
@@ -124,6 +137,7 @@ class BugDetailResponse(BugBase):
     creator: Optional[UserBrief] = None
     assignee: Optional[UserBrief] = None
     requirement: Optional[RequirementBrief] = None
+    testcase: Optional[TestCaseBrief] = None
     sprint: Optional[SprintBrief] = None
 
     class Config:

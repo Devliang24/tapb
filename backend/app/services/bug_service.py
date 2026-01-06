@@ -26,6 +26,7 @@ def create_bug(db: Session, bug_data: BugCreate, creator: User) -> Bug:
         assignee_id=bug_data.assignee_id,
         sprint_id=bug_data.sprint_id,
         requirement_id=bug_data.requirement_id,
+        testcase_id=bug_data.testcase_id,
         environment=bug_data.environment,
         defect_cause=bug_data.defect_cause,
         status=BugStatus.NEW
@@ -50,6 +51,9 @@ def update_bug(db: Session, bug_id: int, bug_data: BugUpdate, user: User) -> Bug
     bug = db.query(Bug).filter(Bug.id == bug_id).first()
     if not bug:
         raise HTTPException(status_code=404, detail="Bug not found")
+    
+    # Get actually provided fields
+    provided_fields = bug_data.model_dump(exclude_unset=True)
     
     # Track changes for history
     changes = []
@@ -91,6 +95,13 @@ def update_bug(db: Session, bug_id: int, bug_data: BugUpdate, user: User) -> Bug
         new_sprint = str(bug_data.sprint_id)
         changes.append(("sprint", old_sprint, new_sprint))
         bug.sprint_id = bug_data.sprint_id
+    
+    # testcase_id can be set to None (unlink), so check if it was provided
+    if 'testcase_id' in provided_fields and bug_data.testcase_id != bug.testcase_id:
+        old_tc = str(bug.testcase_id) if bug.testcase_id else "未关联"
+        new_tc = str(bug_data.testcase_id) if bug_data.testcase_id else "未关联"
+        changes.append(("testcase", old_tc, new_tc))
+        bug.testcase_id = bug_data.testcase_id
     
     if bug_data.environment is not None and bug_data.environment != bug.environment:
         old_env = bug.environment.value if bug.environment else "未设置"

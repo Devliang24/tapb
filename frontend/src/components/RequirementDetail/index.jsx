@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input, Table, Empty, Timeline } from 'antd';
-import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, HistoryOutlined, SendOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, Space, Tag, List, Avatar, message, Popconfirm, Select, Input, Table, Empty, Timeline, Tooltip } from 'antd';
+import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, HistoryOutlined, SendOutlined, EditOutlined, DeleteOutlined, PlusOutlined, CloseOutlined, DisconnectOutlined, FieldTimeOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DetailDrawer from '../DetailDrawer';
 import requirementService from '../../services/requirementService';
 import projectService from '../../services/projectService';
 import bugService from '../../services/bugService';
 import testCaseService from '../../services/testCaseService';
+import taskService from '../../services/taskService';
+import sprintService from '../../services/sprintService';
 import useAuthStore from '../../stores/authStore';
 import RichTextEditor from '../MarkdownEditor';
 import MarkdownRenderer from '../MarkdownRenderer';
@@ -41,7 +43,7 @@ const bugStatusOptions = [
   { value: 'reopened', label: '重新打开', color: 'red' },
 ];
 
-const RequirementDetail = ({ requirementId, visible, onClose, onUpdate, onTaskClick, onBugClick, onTestCaseClick, onPrev, onNext, hasPrev, hasNext }) => {
+const RequirementDetail = ({ requirementId, visible, onClose, onUpdate, onTaskClick, onBugClick, onTestCaseClick, onAddTask, onAddTestCase, onAddBug, onPrev, onNext, hasPrev, hasNext }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('detail');
   const [editedTitle, setEditedTitle] = useState('');
@@ -49,6 +51,7 @@ const RequirementDetail = ({ requirementId, visible, onClose, onUpdate, onTaskCl
   const [editedStatus, setEditedStatus] = useState('');
   const [editedPriority, setEditedPriority] = useState('');
   const [editedAssigneeId, setEditedAssigneeId] = useState(null);
+  const [editedSprintId, setEditedSprintId] = useState(null);
   const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentContent, setEditingCommentContent] = useState('');
@@ -70,6 +73,13 @@ const RequirementDetail = ({ requirementId, visible, onClose, onUpdate, onTaskCl
 const { data: members } = useQuery({
     queryKey: ['projectMembers', requirement?.project_id],
     queryFn: () => projectService.getProjectMembers(requirement.project_id),
+    enabled: visible && !!requirement?.project_id,
+  });
+
+  // 获取项目迭代列表
+  const { data: sprints } = useQuery({
+    queryKey: ['sprints', requirement?.project_id],
+    queryFn: () => sprintService.getSprints(requirement.project_id),
     enabled: visible && !!requirement?.project_id,
   });
 
@@ -104,6 +114,7 @@ const { data: members } = useQuery({
       setEditedStatus(requirement.status);
       setEditedPriority(requirement.priority);
       setEditedAssigneeId(requirement.assignee_id || null);
+      setEditedSprintId(requirement.sprint_id || null);
     }
   }, [requirement]);
 
@@ -166,6 +177,130 @@ const { data: members } = useQuery({
     },
   });
 
+  // 获取项目所有任务（用于关联选择）
+  const { data: allProjectTasks } = useQuery({
+    queryKey: ['allProjectTasks', requirement?.project_id],
+    queryFn: async () => {
+      const allRequirements = await requirementService.getRequirements(requirement?.project_id, { page: 1, page_size: 100 });
+      let allTasks = [];
+      for (const req of (allRequirements?.items || [])) {
+        if (req.tasks) {
+          allTasks = allTasks.concat(req.tasks.map(t => ({ ...t, requirement_number: req.requirement_number })));
+        }
+      }
+      return allTasks;
+    },
+    enabled: !!requirement?.project_id && visible,
+  });
+
+  // 获取项目所有缺陷（用于关联选择）
+  const { data: allProjectBugs } = useQuery({
+    queryKey: ['allProjectBugs', requirement?.project_id],
+    queryFn: async () => {
+      const result = await bugService.getBugs({
+        project_id: requirement?.project_id,
+        page_size: 100,
+      });
+      return result?.items || [];
+    },
+    enabled: !!requirement?.project_id && visible,
+  });
+
+  // 获取项目所有测试用例（用于关联选择）
+  const { data: allProjectTestCases } = useQuery({
+    queryKey: ['allProjectTestCases', requirement?.project_id],
+    queryFn: async () => {
+      const result = await testCaseService.getTestCases({
+        project_id: requirement?.project_id,
+        page_size: 100,
+      });
+      return result?.items || [];
+    },
+    enabled: !!requirement?.project_id && visible,
+  });
+
+  // 过滤出可关联的项（在渲染时过滤，确保使用最新数据）
+  const linkedTaskIds = (tasks || []).map(t => t.id);
+  const availableTasks = (allProjectTasks || []).filter(t => !linkedTaskIds.includes(t.id));
+
+  const linkedBugIds = (bugs?.items || []).map(b => b.id);
+  const availableBugs = (allProjectBugs || []).filter(b => !linkedBugIds.includes(b.id));
+
+  const linkedCaseIds = (testCases?.items || []).map(c => c.id);
+  const availableTestCases = (allProjectTestCases || []).filter(c => !linkedCaseIds.includes(c.id));
+
+  // 关联任务 mutation
+  const linkTaskMutation = useMutation({
+    mutationFn: (taskId) => taskService.updateTask(taskId, { requirement_id: requirementId }),
+    onSuccess: () => {
+      message.success('关联任务成功！');
+      queryClient.invalidateQueries(['requirement', requirementId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '关联失败');
+    },
+  });
+
+  // 关联缺陷 mutation
+  const linkBugMutation = useMutation({
+    mutationFn: (bugId) => bugService.updateBug(bugId, { requirement_id: requirementId }),
+    onSuccess: () => {
+      message.success('关联缺陷成功！');
+      queryClient.invalidateQueries(['requirementBugs', requirementId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '关联失败');
+    },
+  });
+
+  // 关联测试用例 mutation
+  const linkTestCaseMutation = useMutation({
+    mutationFn: (testCaseId) => testCaseService.updateTestCase(testCaseId, { requirement_id: requirementId }),
+    onSuccess: () => {
+      message.success('关联测试用例成功！');
+      queryClient.invalidateQueries(['requirementTestCases', requirementId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '关联失败');
+    },
+  });
+
+  // 移除任务关联
+  const unlinkTaskMutation = useMutation({
+    mutationFn: (taskId) => taskService.updateTask(taskId, { requirement_id: null }),
+    onSuccess: () => {
+      message.success('已移除关联');
+      queryClient.invalidateQueries(['requirement', requirementId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '移除失败');
+    },
+  });
+
+  // 移除测试用例关联
+  const unlinkTestCaseMutation = useMutation({
+    mutationFn: (testCaseId) => testCaseService.updateTestCase(testCaseId, { requirement_id: null }),
+    onSuccess: () => {
+      message.success('已移除关联');
+      queryClient.invalidateQueries(['requirementTestCases', requirementId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '移除失败');
+    },
+  });
+
+  // 移除缺陷关联
+  const unlinkBugMutation = useMutation({
+    mutationFn: (bugId) => bugService.updateBug(bugId, { requirement_id: null }),
+    onSuccess: () => {
+      message.success('已移除关联');
+      queryClient.invalidateQueries(['requirementBugs', requirementId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '移除失败');
+    },
+  });
+
   const handleAddComment = () => {
     if (!newComment.trim()) {
       message.warning('请输入评论内容');
@@ -203,6 +338,7 @@ const { data: members } = useQuery({
       status: editedStatus,
       priority: editedPriority,
       assignee_id: editedAssigneeId,
+      sprint_id: editedSprintId,
     });
   };
 
@@ -213,6 +349,7 @@ const { data: members } = useQuery({
       setEditedStatus(requirement.status);
       setEditedPriority(requirement.priority);
       setEditedAssigneeId(requirement.assignee_id || null);
+      setEditedSprintId(requirement.sprint_id || null);
     }
     setIsEditing(false);
   };
@@ -278,6 +415,26 @@ const { data: members } = useQuery({
       ) : (requirement.assignee?.username || '-'),
     },
     {
+      label: '迭代',
+      icon: <FieldTimeOutlined />,
+      value: isEditing ? (
+        <Select
+          value={editedSprintId}
+          onChange={setEditedSprintId}
+          style={{ width: '100%' }}
+          size="small"
+          placeholder="选择迭代"
+          allowClear
+        >
+          {sprints?.items?.map((s) => (
+            <Select.Option key={s.id} value={s.id}>
+              {s.name}
+            </Select.Option>
+          ))}
+        </Select>
+      ) : (requirement.sprint?.name || '-'),
+    },
+    {
       label: '创建人',
       icon: <UserOutlined />,
       value: requirement.creator?.username || '-',
@@ -321,7 +478,8 @@ const { data: members } = useQuery({
               value={newComment}
               onChange={(val) => setNewComment(val || '')}
               height={120}
-              placeholder="输入评论内容..."
+              placeholder="输入评论内容... (Cmd+Enter 发送)"
+              onSubmit={handleAddComment}
             />
           </div>
           <Button
@@ -387,6 +545,7 @@ const { data: members } = useQuery({
                         value={editingCommentContent}
                         onChange={(val) => setEditingCommentContent(val || '')}
                         height={120}
+                        onSubmit={() => handleSaveComment(comment.id)}
                       />
                     </div>
                   ) : (
@@ -408,6 +567,7 @@ const { data: members } = useQuery({
   // 任务列表内容
   const renderTasksContent = () => {
     const taskList = tasks || [];
+    
     const taskColumns = [
       {
         title: '编号',
@@ -443,6 +603,22 @@ const { data: members } = useQuery({
         key: 'assignee',
         width: 100,
         render: (text) => text || '-',
+      },
+      {
+        title: '操作',
+        key: 'action',
+        width: 60,
+        render: (_, record) => (
+          <Popconfirm
+            title="移除关联"
+            description="确定要移除此关联吗？"
+            onConfirm={() => unlinkTaskMutation.mutate(record.id)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
+          </Popconfirm>
+        ),
       },
     ];
 
@@ -496,10 +672,46 @@ const { data: members } = useQuery({
           return <Tag color={colors[priority]}>{labels[priority]}</Tag>;
         },
       },
+      {
+        title: '操作',
+        key: 'action',
+        width: 60,
+        render: (_, record) => (
+          <Popconfirm
+            title="移除关联"
+            description="确定要移除此关联吗？"
+            onConfirm={() => unlinkTestCaseMutation.mutate(record.id)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
+          </Popconfirm>
+        ),
+      },
     ];
+
+    const testCaseOptions = (availableTestCases || []).map(c => ({
+      value: c.id,
+      label: `${c.case_number} ${c.name}`,
+    }));
 
     return (
       <div>
+        <div style={{ marginBottom: 12 }}>
+          <Select
+            showSearch
+            placeholder="搜索并关联测试用例"
+            style={{ width: '100%' }}
+            value={null}
+            filterOption={(input, option) =>
+              option.label.toLowerCase().includes(input.toLowerCase())
+            }
+            onSelect={(value) => linkTestCaseMutation.mutate(value)}
+            options={testCaseOptions}
+            loading={linkTestCaseMutation.isPending}
+            notFoundContent="暂无可关联的测试用例"
+          />
+        </div>
         {caseList.length > 0 ? (
           <Table
             columns={caseColumns}
@@ -554,10 +766,46 @@ const { data: members } = useQuery({
         width: 100,
         render: (text) => text || '-',
       },
+      {
+        title: '操作',
+        key: 'action',
+        width: 60,
+        render: (_, record) => (
+          <Popconfirm
+            title="移除关联"
+            description="确定要移除此关联吗？"
+            onConfirm={() => unlinkBugMutation.mutate(record.id)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
+          </Popconfirm>
+        ),
+      },
     ];
+
+    const bugOptions = (availableBugs || []).map(b => ({
+      value: b.id,
+      label: `${b.bug_number} ${b.title}`,
+    }));
 
     return (
       <div>
+        <div style={{ marginBottom: 12 }}>
+          <Select
+            showSearch
+            placeholder="搜索并关联缺陷"
+            style={{ width: '100%' }}
+            value={null}
+            filterOption={(input, option) =>
+              option.label.toLowerCase().includes(input.toLowerCase())
+            }
+            onSelect={(value) => linkBugMutation.mutate(value)}
+            options={bugOptions}
+            loading={linkBugMutation.isPending}
+            notFoundContent="暂无可关联的缺陷"
+          />
+        </div>
         {bugList.length > 0 ? (
           <Table
             columns={bugColumns}

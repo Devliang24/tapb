@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Tag, List, Avatar, Input, message, Select, Popconfirm, Timeline, Empty } from 'antd';
-import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, LinkOutlined, HistoryOutlined, GlobalOutlined, BugOutlined, AimOutlined, SendOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, Space, Tag, List, Avatar, Input, message, Select, Popconfirm, Timeline, Empty, Table } from 'antd';
+import { UserOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ClockCircleOutlined, UserAddOutlined, CalendarOutlined, LinkOutlined, HistoryOutlined, GlobalOutlined, BugOutlined, AimOutlined, SendOutlined, EditOutlined, DeleteOutlined, DisconnectOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DetailDrawer from '../DetailDrawer';
 import RichTextEditor from '../MarkdownEditor';
@@ -8,6 +8,8 @@ import MarkdownRenderer from '../MarkdownRenderer';
 import bugService from '../../services/bugService';
 import requirementService from '../../services/requirementService';
 import sprintService from '../../services/sprintService';
+import projectService from '../../services/projectService';
+import testCaseService from '../../services/testCaseService';
 import useAuthStore from '../../stores/authStore';
 
 const statusOptions = [
@@ -51,7 +53,7 @@ const defectCauseOptions = [
   { value: 'other', label: '其他' },
 ];
 
-const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNext, hasPrev, hasNext }) => {
+const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNext, hasPrev, hasNext, onRequirementClick, onTestCaseClick }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('detail');
   const [editedTitle, setEditedTitle] = useState('');
@@ -63,6 +65,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
   const [editedEnvironment, setEditedEnvironment] = useState(null);
   const [editedDefectCause, setEditedDefectCause] = useState(null);
   const [editedSprintId, setEditedSprintId] = useState(null);
+  const [editedAssigneeId, setEditedAssigneeId] = useState(null);
   const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentContent, setEditingCommentContent] = useState('');
@@ -102,6 +105,27 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
     enabled: !!effectiveProjectId && visible,
   });
 
+  // 获取项目成员列表用于处理人选择
+  const { data: projectMembers } = useQuery({
+    queryKey: ['projectMembers', effectiveProjectId],
+    queryFn: () => projectService.getProjectMembers(effectiveProjectId),
+    enabled: !!effectiveProjectId && visible,
+  });
+
+  // 获取关联的测试用例（通过 bug.testcase_id）
+  const { data: linkedTestCase } = useQuery({
+    queryKey: ['testcase', bug?.testcase_id],
+    queryFn: () => testCaseService.getTestCase(bug.testcase_id),
+    enabled: !!bug?.testcase_id && visible,
+  });
+
+  // 获取可关联的测试用例
+  const { data: allTestCases } = useQuery({
+    queryKey: ['projectTestCases', effectiveProjectId],
+    queryFn: () => testCaseService.getTestCases({ project_id: effectiveProjectId, page_size: 100 }),
+    enabled: !!effectiveProjectId && visible,
+  });
+
   useEffect(() => {
     if (bug) {
       setEditedTitle(bug.title);
@@ -113,6 +137,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
       setEditedEnvironment(bug.environment || null);
       setEditedDefectCause(bug.defect_cause || null);
       setEditedSprintId(bug.sprint_id || null);
+      setEditedAssigneeId(bug.assignee_id || null);
     }
   }, [bug]);
 
@@ -174,6 +199,58 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
     },
   });
 
+  // 关联测试用例（通过更新 bug 的 testcase_id）
+  const linkTestCaseMutation = useMutation({
+    mutationFn: (testCaseId) => bugService.updateBug(bugId, { testcase_id: testCaseId }),
+    onSuccess: () => {
+      message.success('关联成功！');
+      queryClient.invalidateQueries(['bug', bugId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '关联失败');
+    },
+  });
+
+  // 关联需求（通过更新 bug 的 requirement_id）
+  const linkRequirementMutation = useMutation({
+    mutationFn: (requirementId) => bugService.updateBug(bugId, { requirement_id: requirementId }),
+    onSuccess: () => {
+      message.success('关联成功！');
+      queryClient.invalidateQueries(['bug', bugId]);
+      queryClient.invalidateQueries(['bugHistory', bugId]);
+      onUpdate?.();
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '关联失败');
+    },
+  });
+
+  // 移除需求关联
+  const unlinkRequirementMutation = useMutation({
+    mutationFn: () => bugService.updateBug(bugId, { requirement_id: null }),
+    onSuccess: () => {
+      message.success('已移除关联');
+      queryClient.invalidateQueries(['bug', bugId]);
+      queryClient.invalidateQueries(['bugHistory', bugId]);
+      onUpdate?.();
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '移除失败');
+    },
+  });
+
+  // 移除测试用例关联
+  const unlinkTestCaseMutation = useMutation({
+    mutationFn: () => bugService.updateBug(bugId, { testcase_id: null }),
+    onSuccess: () => {
+      message.success('已移除关联');
+      queryClient.invalidateQueries(['bug', bugId]);
+    },
+    onError: (error) => {
+      message.error(error.response?.data?.detail || '移除失败');
+    },
+  });
+
   const handleSave = () => {
     updateMutation.mutate({
       title: editedTitle,
@@ -185,6 +262,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
       environment: editedEnvironment,
       defect_cause: editedDefectCause,
       sprint_id: editedSprintId,
+      assignee_id: editedAssigneeId,
     });
   };
 
@@ -199,6 +277,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
       setEditedEnvironment(bug.environment || null);
       setEditedDefectCause(bug.defect_cause || null);
       setEditedSprintId(bug.sprint_id || null);
+      setEditedAssigneeId(bug.assignee_id || null);
     }
     setIsEditing(false);
   };
@@ -292,7 +371,27 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
     {
       label: '处理人',
       icon: <UserAddOutlined />,
-      value: bug.assignee?.username || '未分配',
+      value: isEditing ? (
+        <Select
+          value={editedAssigneeId}
+          onChange={setEditedAssigneeId}
+          style={{ width: '100%' }}
+          size="small"
+          placeholder="选择处理人"
+          allowClear
+          showSearch
+          optionFilterProp="children"
+          filterOption={(input, option) =>
+            (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
+          }
+        >
+          {projectMembers?.map(member => (
+            <Select.Option key={member.user_id} value={member.user_id}>
+              {member.user?.username || `用户${member.user_id}`}
+            </Select.Option>
+          ))}
+        </Select>
+      ) : (bug.assignee?.username || '未分配'),
     },
     {
       label: '创建人',
@@ -315,6 +414,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
           filterOption={(input, option) =>
             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
           }
+          popupMatchSelectWidth={280}
         >
           {requirements?.items?.map(req => (
             <Select.Option
@@ -378,11 +478,11 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
         >
           {sprints?.items?.map(sprint => (
             <Select.Option key={sprint.id} value={sprint.id}>
-              {sprint.name}
+              {sprint.name?.split(' (')[0] || sprint.name}
             </Select.Option>
           ))}
         </Select>
-      ) : (bug.sprint?.name || '未设置'),
+      ) : (bug.sprint?.name?.split(' (')[0] || bug.sprint?.name || '未设置'),
     },
     {
       label: '创建时间',
@@ -423,7 +523,8 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
               value={newComment}
               onChange={(val) => setNewComment(val || '')}
               height={120}
-              placeholder="输入评论内容..."
+              placeholder="输入评论内容... (Cmd+Enter 发送)"
+              onSubmit={handleAddComment}
             />
           </div>
           <Button
@@ -489,6 +590,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
                         value={editingCommentContent}
                         onChange={(val) => setEditingCommentContent(val || '')}
                         height={120}
+                        onSubmit={() => handleSaveComment(comment.id)}
                       />
                     </div>
                   ) : (
@@ -508,14 +610,110 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
   );
 
   // 测试用例内容
-  const renderTestCasesContent = () => (
-    <div>
-      <Empty
-        description="暂无关联测试用例"
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-      />
-    </div>
-  );
+  const renderTestCasesContent = () => {
+    // 当前关联的用例（单个）
+    const caseList = linkedTestCase ? [linkedTestCase] : [];
+    
+    // 过滤出可关联的用例（排除已关联的）
+    const availableCases = (allTestCases?.items || []).filter(
+      c => c.id !== bug?.testcase_id
+    );
+
+    const caseColumns = [
+      {
+        title: '编号',
+        dataIndex: 'case_number',
+        key: 'case_number',
+        width: 80,
+      },
+      {
+        title: '用例名称',
+        dataIndex: 'name',
+        key: 'name',
+        ellipsis: true,
+        render: (text, record) => (
+          <span 
+            onClick={(e) => { e.stopPropagation(); onTestCaseClick?.(record.id); }} 
+            style={{ cursor: 'pointer', color: '#000' }}
+          >{text}</span>
+        ),
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 80,
+        render: (status) => {
+          const colors = { passed: 'green', failed: 'red', not_executed: 'default' };
+          const labels = { passed: '通过', failed: '失败', not_executed: '未执行' };
+          return <Tag color={colors[status]}>{labels[status] || status}</Tag>;
+        },
+      },
+      {
+        title: '优先级',
+        dataIndex: 'priority',
+        key: 'priority',
+        width: 80,
+        render: (priority) => {
+          const colors = { high: 'red', medium: 'orange', low: 'blue' };
+          const labels = { high: '高', medium: '中', low: '低' };
+          return <Tag color={colors[priority]}>{labels[priority]}</Tag>;
+        },
+      },
+      {
+        title: '操作',
+        key: 'action',
+        width: 60,
+        render: () => (
+          <Popconfirm
+            title="移除关联"
+            description="确定要移除此关联吗？"
+            onConfirm={() => unlinkTestCaseMutation.mutate()}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
+          </Popconfirm>
+        ),
+      },
+    ];
+
+    const testCaseOptions = availableCases.map(c => ({
+      value: c.id,
+      label: `${c.case_number} ${c.name}`,
+    }));
+
+    return (
+      <div>
+        <div style={{ marginBottom: 12 }}>
+          <Select
+            showSearch
+            placeholder="搜索并关联测试用例"
+            style={{ width: '100%' }}
+            value={null}
+            filterOption={(input, option) =>
+              option.label.toLowerCase().includes(input.toLowerCase())
+            }
+            onSelect={(value) => linkTestCaseMutation.mutate(value)}
+            options={testCaseOptions}
+            loading={linkTestCaseMutation.isPending}
+            notFoundContent="暂无可关联的测试用例"
+          />
+        </div>
+        {caseList.length > 0 ? (
+          <Table
+            columns={caseColumns}
+            dataSource={caseList}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="暂无关联测试用例" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    );
+  };
 
   // 字段名称映射
   const fieldLabels = {
@@ -585,6 +783,115 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
     return value;
   };
 
+  // 需求内容
+  const renderRequirementContent = () => {
+    // 当前关联的需求（从 requirements 列表中获取完整数据）
+    const linkedReq = bug?.requirement_id 
+      ? (requirements?.items || []).find(r => r.id === bug.requirement_id) || bug.requirement
+      : null;
+    const reqList = linkedReq ? [linkedReq] : [];
+    
+    // 过滤出可关联的需求（排除已关联的）
+    const availableReqs = (requirements?.items || []).filter(
+      r => r.id !== bug?.requirement_id
+    );
+
+    const reqColumns = [
+      {
+        title: '编号',
+        dataIndex: 'requirement_number',
+        key: 'requirement_number',
+        width: 100,
+      },
+      {
+        title: '需求名称',
+        dataIndex: 'title',
+        key: 'title',
+        ellipsis: true,
+        render: (text, record) => (
+          <span 
+            onClick={(e) => { e.stopPropagation(); onRequirementClick?.(record.id); }} 
+            style={{ cursor: 'pointer', color: '#000' }}
+          >{text}</span>
+        ),
+      },
+      {
+        title: '状态',
+        dataIndex: 'status',
+        key: 'status',
+        width: 100,
+        render: (status) => {
+          const colors = { draft: 'default', approved: 'blue', in_progress: 'orange', completed: 'green', cancelled: 'red' };
+          const labels = { draft: '草稿', approved: '已批准', in_progress: '进行中', completed: '已完成', cancelled: '已取消' };
+          return <Tag color={colors[status]}>{labels[status] || status}</Tag>;
+        },
+      },
+      {
+        title: '优先级',
+        dataIndex: 'priority',
+        key: 'priority',
+        width: 80,
+        render: (priority) => {
+          const colors = { high: 'red', medium: 'orange', low: 'blue' };
+          const labels = { high: '高', medium: '中', low: '低' };
+          return <Tag color={colors[priority]}>{labels[priority]}</Tag>;
+        },
+      },
+      {
+        title: '操作',
+        key: 'action',
+        width: 60,
+        render: () => (
+          <Popconfirm
+            title="移除关联"
+            description="确定要移除此关联吗？"
+            onConfirm={() => unlinkRequirementMutation.mutate()}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
+          </Popconfirm>
+        ),
+      },
+    ];
+
+    const reqOptions = availableReqs.map(r => ({
+      value: r.id,
+      label: `${r.requirement_number} ${r.title}`,
+    }));
+
+    return (
+      <div>
+        <div style={{ marginBottom: 12 }}>
+          <Select
+            showSearch
+            placeholder="搜索并关联需求"
+            style={{ width: '100%' }}
+            value={null}
+            filterOption={(input, option) =>
+              option.label.toLowerCase().includes(input.toLowerCase())
+            }
+            onSelect={(value) => linkRequirementMutation.mutate(value)}
+            options={reqOptions}
+            loading={linkRequirementMutation.isPending}
+            notFoundContent="暂无可关联的需求"
+          />
+        </div>
+        {reqList.length > 0 ? (
+          <Table
+            columns={reqColumns}
+            dataSource={reqList}
+            rowKey="id"
+            size="small"
+            pagination={false}
+          />
+        ) : (
+          <Empty description="暂无关联需求" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </div>
+    );
+  };
+
   // 操作历史内容
   const renderHistoryContent = () => {
     return (
@@ -638,9 +945,15 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
       children: renderDetailContent(),
     },
     {
+      key: 'requirement',
+      label: '需求',
+      badge: bug?.requirement_id ? 1 : 0,
+      children: renderRequirementContent(),
+    },
+    {
       key: 'testcases',
       label: '测试用例',
-      badge: 0,
+      badge: bug?.testcase_id ? 1 : 0,
       children: renderTestCasesContent(),
     },
     {

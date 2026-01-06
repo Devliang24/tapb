@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import uploadService from '../../services/uploadService';
 import './index.css';
 
-const RichTextEditor = ({ value, onChange, height = 300, placeholder }) => {
+const RichTextEditor = ({ value, onChange, height = 300, placeholder, onSubmit }) => {
   const handleImageUpload = async (file) => {
     try {
       const result = await uploadService.uploadImage(file);
@@ -72,6 +72,15 @@ const RichTextEditor = ({ value, onChange, height = 300, placeholder }) => {
               }
             }
           });
+          return true;
+        }
+        return false;
+      },
+      handleKeyDown: (view, event) => {
+        // Cmd+Enter (Mac) or Ctrl+Enter (Windows) to submit
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+          event.preventDefault();
+          onSubmit?.();
           return true;
         }
         return false;

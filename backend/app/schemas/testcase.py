@@ -47,6 +47,7 @@ class TestCaseCreate(TestCaseBase):
     project_id: int
     category_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     status: TestCaseStatus = TestCaseStatus.NOT_EXECUTED
     precondition: Optional[str] = None
     steps: Optional[str] = None
@@ -60,6 +61,7 @@ class TestCaseUpdate(BaseModel):
     priority: Optional[TestCasePriority] = None
     category_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     precondition: Optional[str] = None
     steps: Optional[str] = None
     expected_result: Optional[str] = None
@@ -90,11 +92,20 @@ class RequirementBrief(BaseModel):
         from_attributes = True
 
 
+class SprintBrief(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class TestCaseResponse(TestCaseBase):
     id: int
     project_id: int
     category_id: Optional[int] = None
     requirement_id: Optional[int] = None
+    sprint_id: Optional[int] = None
     case_number: str
     status: TestCaseStatus
     precondition: Optional[str] = None
@@ -106,6 +117,7 @@ class TestCaseResponse(TestCaseBase):
     creator: Optional[UserBrief] = None
     category: Optional[CategoryBrief] = None
     requirement: Optional[RequirementBrief] = None
+    sprint: Optional[SprintBrief] = None
 
     class Config:
         from_attributes = True

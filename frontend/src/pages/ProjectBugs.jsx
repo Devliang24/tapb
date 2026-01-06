@@ -6,6 +6,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import BugList from '../components/BugList';
 import BugForm from '../components/BugForm';
 import BugDetail from '../components/BugDetail';
+import RequirementDetail from '../components/RequirementDetail';
+import TestCaseDetail from '../components/TestCaseDetail';
 import projectService from '../services/projectService';
 
 const { Title } = Typography;
@@ -15,6 +17,8 @@ const ProjectBugs = () => {
   const navigate = useNavigate();
   const [formVisible, setFormVisible] = useState(false);
   const [detailBugId, setDetailBugId] = useState(null);
+  const [detailRequirementId, setDetailRequirementId] = useState(null);
+  const [detailTestCaseId, setDetailTestCaseId] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: project } = useQuery({
@@ -67,6 +71,22 @@ const ProjectBugs = () => {
         visible={!!detailBugId}
         onClose={() => setDetailBugId(null)}
         onUpdate={handleBugUpdate}
+        projectId={parseInt(projectId)}
+        onRequirementClick={(reqId) => setDetailRequirementId(reqId)}
+        onTestCaseClick={(caseId) => setDetailTestCaseId(caseId)}
+      />
+
+      <RequirementDetail
+        requirementId={detailRequirementId}
+        visible={!!detailRequirementId}
+        onClose={() => setDetailRequirementId(null)}
+      />
+
+      <TestCaseDetail
+        testCaseId={detailTestCaseId}
+        open={!!detailTestCaseId}
+        onClose={() => setDetailTestCaseId(null)}
+        projectId={parseInt(projectId)}
       />
     </div>
   );

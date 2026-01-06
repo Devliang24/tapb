@@ -58,6 +58,7 @@ class Bug(Base):
     sprint_id = Column(Integer, ForeignKey("sprints.id"), nullable=True, index=True)
     requirement_id = Column(Integer, ForeignKey("requirements.id"), nullable=True, index=True)
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True, index=True)
+    testcase_id = Column(Integer, ForeignKey("testcases.id"), nullable=True, index=True)
     bug_number = Column(String(50), unique=True, nullable=False, index=True)  # e.g., "PROJ-001"
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=False)  # Markdown format
@@ -76,6 +77,7 @@ class Bug(Base):
     sprint = relationship("Sprint", back_populates="bugs")
     requirement = relationship("Requirement", back_populates="bugs")
     task = relationship("Task", back_populates="bugs")
+    testcase = relationship("TestCase", back_populates="bugs")
     creator = relationship("User", back_populates="created_bugs", foreign_keys=[creator_id])
     assignee = relationship("User", back_populates="assigned_bugs", foreign_keys=[assignee_id])
     comments = relationship("BugComment", back_populates="bug", cascade="all, delete-orphan")

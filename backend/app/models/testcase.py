@@ -54,6 +54,7 @@ class TestCase(Base):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     category_id = Column(Integer, ForeignKey("testcase_categories.id"), nullable=True, index=True)
     requirement_id = Column(Integer, ForeignKey("requirements.id"), nullable=True, index=True)
+    sprint_id = Column(Integer, ForeignKey("sprints.id"), nullable=True, index=True)
     case_number = Column(String(50), unique=True, nullable=False, index=True)  # e.g., "TC-001"
     name = Column(String(200), nullable=False)
     type = Column(Enum(TestCaseType), default=TestCaseType.FUNCTIONAL, nullable=False)
@@ -70,8 +71,10 @@ class TestCase(Base):
     project = relationship("Project", back_populates="testcases")
     category = relationship("TestCaseCategory", back_populates="testcases")
     requirement = relationship("Requirement")
+    sprint = relationship("Sprint")
     creator = relationship("User", back_populates="created_testcases", foreign_keys=[creator_id])
     history = relationship("TestCaseHistory", back_populates="testcase", cascade="all, delete-orphan")
+    bugs = relationship("Bug", back_populates="testcase")
 
 
 class TestCaseHistory(Base):

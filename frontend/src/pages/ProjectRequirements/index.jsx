@@ -7,6 +7,7 @@ import RequirementForm from '../../components/RequirementForm';
 import RequirementDetail from '../../components/RequirementDetail';
 import TaskDetail from '../../components/TaskDetail';
 import BugDetail from '../../components/BugDetail';
+import TestCaseDetail from '../../components/TestCaseDetail';
 import './index.css';
 
 const ProjectRequirements = () => {
@@ -20,6 +21,7 @@ const ProjectRequirements = () => {
   const [viewingId, setViewingId] = useState(null);
   const [detailTaskId, setDetailTaskId] = useState(null);
   const [detailBugId, setDetailBugId] = useState(null);
+  const [detailTestCaseId, setDetailTestCaseId] = useState(null);
 
   const handleCreateClick = () => {
     setEditingId(null);
@@ -93,6 +95,9 @@ const ProjectRequirements = () => {
         visible={detailOpen}
         onClose={handleDetailClose}
         onEdit={handleReqEdit}
+        onTaskClick={(taskId) => setDetailTaskId(taskId)}
+        onBugClick={(bugId) => setDetailBugId(bugId)}
+        onTestCaseClick={(caseId) => setDetailTestCaseId(caseId)}
       />
 
       <TaskDetail
@@ -100,6 +105,7 @@ const ProjectRequirements = () => {
         visible={!!detailTaskId}
         onClose={() => setDetailTaskId(null)}
         onUpdate={handleTaskUpdate}
+        onRequirementClick={(reqId) => { setDetailTaskId(null); setViewingId(reqId); setDetailOpen(true); }}
       />
 
       <BugDetail
@@ -108,6 +114,17 @@ const ProjectRequirements = () => {
         onClose={() => setDetailBugId(null)}
         onUpdate={handleBugUpdate}
         projectId={parseInt(projectId)}
+        onRequirementClick={(reqId) => { setDetailBugId(null); setViewingId(reqId); setDetailOpen(true); }}
+        onTestCaseClick={(caseId) => setDetailTestCaseId(caseId)}
+      />
+
+      <TestCaseDetail
+        testCaseId={detailTestCaseId}
+        open={!!detailTestCaseId}
+        onClose={() => setDetailTestCaseId(null)}
+        projectId={parseInt(projectId)}
+        onRequirementClick={(reqId) => { setDetailTestCaseId(null); setViewingId(reqId); setDetailOpen(true); }}
+        onBugClick={(bugId) => setDetailBugId(bugId)}
       />
     </div>
   );
