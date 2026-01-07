@@ -23,6 +23,31 @@
   gap: 8px;
 }
 
+/* 迭代页面固定模式 */
+.requirement-list-wrapper.sticky-mode {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.requirement-list-wrapper.sticky-mode .sticky-header {
+  flex-shrink: 0;
+  padding: 16px 16px 0 16px;
+  background: #fff;
+  z-index: 10;
+}
+
+.requirement-list-wrapper.sticky-mode .toolbar {
+  margin-bottom: 16px;
+}
+
+.requirement-list-wrapper.sticky-mode .table-scroll-container {
+  flex: 1;
+  overflow: auto;
+  padding: 0 16px 16px 16px;
+}
+
 .toolbar-left {
   display: flex;
   gap: 8px;

@@ -38,18 +38,18 @@ const LinkRequirementsDrawer = ({ visible, onClose, projectId, sprintId, sprintN
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
 
-  // 获取未关联迭代的需求
+  // 获取非当前迭代的需求（包括未关联的和关联到其他迭代的）
   const { data: reqData, isLoading } = useQuery({
-    queryKey: ['unlinkedRequirements', projectId, search],
+    queryKey: ['availableRequirements', projectId, sprintId, search],
     queryFn: () => requirementService.getRequirements(projectId, { 
-      unlinked: true, // 获取未关联迭代的需求
+      exclude_sprint_id: sprintId, // 排除当前迭代的需求
       search: search || undefined,
       page_size: 100
     }),
     enabled: visible && !!projectId,
   });
 
-  const unlinkedRequirements = reqData?.items || [];
+  const availableRequirements = reqData?.items || [];
 
   useEffect(() => {
     if (!visible) {
@@ -136,6 +136,7 @@ const LinkRequirementsDrawer = ({ visible, onClose, projectId, sprintId, sprintN
       onClose={onClose}
       width={700}
       closable={false}
+      styles={{ mask: { backgroundColor: 'transparent' } }}
       extra={
         <Space>
           <Button onClick={onClose}>取消</Button>
@@ -160,20 +161,21 @@ const LinkRequirementsDrawer = ({ visible, onClose, projectId, sprintId, sprintN
           enterButton={<SearchOutlined />}
         />
         <span className="link-drawer-hint">
-          显示未关联迭代的需求，共 {unlinkedRequirements.length} 条
+          显示未关联迭代的需求，共 {availableRequirements.length} 条
         </span>
       </div>
 
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={unlinkedRequirements}
+        dataSource={availableRequirements}
         loading={isLoading}
         rowSelection={rowSelection}
         size="small"
         pagination={{
-          pageSize: 10,
-          showSizeChanger: false,
+          pageSize: 20,
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
           showTotal: (total) => `共 ${total} 条`,
         }}
       />

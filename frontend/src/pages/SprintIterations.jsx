@@ -211,6 +211,7 @@ const SprintIterations = () => {
               onRequirementClick={handleReqClick}
               onTaskClick={handleTaskClick}
               onBugClick={handleBugClick}
+              stickyMode
             />
           ) : (
             <div className="iterations-empty">

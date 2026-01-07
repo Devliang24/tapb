@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Drawer, Form, Input, Select, Button, Space, message, DatePicker, Row, Col, Divider, List, Avatar, Popconfirm } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -167,10 +167,11 @@ const RequirementForm = ({ visible, onClose, projectId, requirement = null }) =>
 
   return (
     <Drawer
-      title={isEdit ? '编辑需求' : '新建需求'}
+      title={isEdit ? '编辑需求' : '新庺需求'}
       open={visible}
       onClose={onClose}
       closable={false}
+      styles={{ mask: { backgroundColor: 'transparent' } }}
       width="55%"
       extra={
         <Space>

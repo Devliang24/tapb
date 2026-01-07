@@ -119,6 +119,7 @@ const RequirementList = ({
   onBugClick, 
   hideCreateButton = false,
   showQuickCreate = false,
+  stickyMode = false,
 }) => {
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState('');
@@ -519,7 +520,6 @@ const RequirementList = ({
                 hasChildren ? (
                   isExpanded ? (
                     <CaretDownOutlined 
-                      rotate={90}
                       className="expand-icon-inline"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -528,7 +528,6 @@ const RequirementList = ({
                     />
                   ) : (
                     <CaretRightOutlined 
-                      rotate={90}
                       className="expand-icon-inline"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -560,7 +559,6 @@ const RequirementList = ({
               {hasChildren ? (
                 isExpanded ? (
                   <CaretDownOutlined 
-                    rotate={90}
                     className="expand-icon-inline"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -569,7 +567,6 @@ const RequirementList = ({
                   />
                 ) : (
                   <CaretRightOutlined 
-                    rotate={90}
                     className="expand-icon-inline"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -710,125 +707,146 @@ const RequirementList = ({
     },
   ];
 
-  return (
-    <div className="requirement-list-wrapper">
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <Input.Search
-            placeholder="搜索需求..."
-            style={{ width: 180 }}
-            allowClear
-            onSearch={setSearch}
-            enterButton={<SearchOutlined />}
-          />
+  const toolbarContent = (
+    <div className="toolbar">
+      <div className="toolbar-left">
+        <Input.Search
+          placeholder="搜索需求..."
+          style={{ width: 180 }}
+          allowClear
+          onSearch={setSearch}
+          enterButton={<SearchOutlined />}
+        />
 
-          <Select
-            placeholder="状态"
-            style={{ width: 100 }}
-            allowClear
-            value={filters.status}
-            onChange={(value) => setFilters({ ...filters, status: value })}
-          >
-            <Select.Option value="draft">草稿</Select.Option>
-            <Select.Option value="approved">已批准</Select.Option>
-            <Select.Option value="in_progress">进行中</Select.Option>
-            <Select.Option value="completed">已完成</Select.Option>
-            <Select.Option value="cancelled">已取消</Select.Option>
-          </Select>
+        <Select
+          placeholder="状态"
+          style={{ width: 100 }}
+          allowClear
+          value={filters.status}
+          onChange={(value) => setFilters({ ...filters, status: value })}
+        >
+          <Select.Option value="draft">草稿</Select.Option>
+          <Select.Option value="approved">已批准</Select.Option>
+          <Select.Option value="in_progress">进行中</Select.Option>
+          <Select.Option value="completed">已完成</Select.Option>
+          <Select.Option value="cancelled">已取消</Select.Option>
+        </Select>
 
-          <Select
-            placeholder="优先级"
-            style={{ width: 90 }}
-            allowClear
-            value={filters.priority}
-            onChange={(value) => setFilters({ ...filters, priority: value })}
-          >
-            <Select.Option value="high">High</Select.Option>
-            <Select.Option value="medium">Middle</Select.Option>
-            <Select.Option value="low">Low</Select.Option>
-          </Select>
+        <Select
+          placeholder="优先级"
+          style={{ width: 90 }}
+          allowClear
+          value={filters.priority}
+          onChange={(value) => setFilters({ ...filters, priority: value })}
+        >
+          <Select.Option value="high">High</Select.Option>
+          <Select.Option value="medium">Middle</Select.Option>
+          <Select.Option value="low">Low</Select.Option>
+        </Select>
 
-          <Select
-            placeholder="处理人"
-            style={{ width: 100 }}
-            allowClear
-            value={filters.assignee_id}
-            onChange={(value) => setFilters({ ...filters, assignee_id: value })}
-          >
-            {members?.map(m => (
-              <Select.Option key={m.user_id} value={m.user_id}>{m.user?.username}</Select.Option>
-            ))}
-          </Select>
-        </div>
-
-        <div className="toolbar-actions">
-          <span className="result-count">共 {reqData?.total || 0} 条</span>
-          {selectedRowKeys.filter(k => k.startsWith('story-')).length > 0 && (
-            <>
-              <Dropdown menu={{ items: statusMenuItems, onClick: ({ key }) => handleBulkStatusChange(key) }} placement="bottomLeft">
-                <Button>批量改状态 ({selectedRowKeys.filter(k => k.startsWith('story-')).length})</Button>
-              </Dropdown>
-              <Button danger onClick={handleBulkDelete}>
-                批量删除 ({selectedRowKeys.filter(k => k.startsWith('story-')).length})
-              </Button>
-            </>
-          )}
-          {!hideCreateButton && (
-            <Button type="primary" onClick={onCreateClick}>
-              创建需求
-            </Button>
-          )}
-          {sprintId && (
-            <Button icon={<LinkOutlined />} onClick={() => setLinkDrawerVisible(true)}>
-              关联需求
-            </Button>
-          )}
-        </div>
+        <Select
+          placeholder="处理人"
+          style={{ width: 100 }}
+          allowClear
+          value={filters.assignee_id}
+          onChange={(value) => setFilters({ ...filters, assignee_id: value })}
+        >
+          {members?.map(m => (
+            <Select.Option key={m.user_id} value={m.user_id}>{m.user?.username}</Select.Option>
+          ))}
+        </Select>
       </div>
 
-      {/* 快速创建 */}
-      {showQuickCreate && (
-        <div className="quick-create-row">
-          <PlusOutlined className="quick-create-icon" />
-          <Input
-            className="quick-create-input"
-            placeholder="快速创建"
-            value={quickCreateTitle}
-            onChange={(e) => setQuickCreateTitle(e.target.value)}
-            onPressEnter={handleQuickCreate}
-            bordered={false}
-          />
-        </div>
-      )}
-      
-      <Table
-        className="tree-table"
-        columns={columns}
-        dataSource={treeData}
-        loading={isLoading}
-        rowKey="key"
-        rowSelection={rowSelection}
-        rowClassName={(record) => {
-          if (record.type === 'story') return 'story-row';
-          if (record.type === 'task') return 'task-row';
-          return 'bug-row';
-        }}
-        sticky={{ offsetHeader: 49 }}
-        expandable={{
-          expandedRowKeys,
-          onExpand: (expanded, record) => toggleExpand(record.key),
-          expandIcon: () => null,
-          expandIconColumnIndex: -1,
-        }}
-        pagination={{
-          current: page,
-          pageSize: reqData?.page_size || 20,
-          total: reqData?.total || 0,
-          onChange: setPage,
-          showSizeChanger: false,
-          showTotal: (total) => `共 ${total} 条`,
-        }}
+      <div className="toolbar-actions">
+        <span className="result-count">共 {reqData?.total || 0} 条</span>
+        {selectedRowKeys.filter(k => k.startsWith('story-')).length > 0 && (
+          <>
+            <Dropdown menu={{ items: statusMenuItems, onClick: ({ key }) => handleBulkStatusChange(key) }} placement="bottomLeft">
+              <Button>批量改状态 ({selectedRowKeys.filter(k => k.startsWith('story-')).length})</Button>
+            </Dropdown>
+            <Button danger onClick={handleBulkDelete}>
+              批量删除 ({selectedRowKeys.filter(k => k.startsWith('story-')).length})
+            </Button>
+          </>
+        )}
+        {!hideCreateButton && (
+          <Button type="primary" onClick={onCreateClick}>
+            创建需求
+          </Button>
+        )}
+        {sprintId && (
+          <Button icon={<LinkOutlined />} onClick={() => setLinkDrawerVisible(true)}>
+            关联需求
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  const quickCreateContent = showQuickCreate && (
+    <div className="quick-create-row">
+      <PlusOutlined className="quick-create-icon" />
+      <Input
+        className="quick-create-input"
+        placeholder="快速创建"
+        value={quickCreateTitle}
+        onChange={(e) => setQuickCreateTitle(e.target.value)}
+        onPressEnter={handleQuickCreate}
+        bordered={false}
       />
+    </div>
+  );
+
+  const tableContent = (
+    <Table
+      className="tree-table"
+      columns={columns}
+      dataSource={treeData}
+      loading={isLoading}
+      rowKey="key"
+      rowSelection={rowSelection}
+      rowClassName={(record) => {
+        if (record.type === 'story') return 'story-row';
+        if (record.type === 'task') return 'task-row';
+        return 'bug-row';
+      }}
+      sticky
+      expandable={{
+        expandedRowKeys,
+        onExpand: (expanded, record) => toggleExpand(record.key),
+        expandIcon: () => null,
+        expandIconColumnIndex: -1,
+      }}
+      pagination={{
+        current: page,
+        pageSize: reqData?.page_size || 20,
+        total: reqData?.total || 0,
+        onChange: setPage,
+        showSizeChanger: false,
+        showTotal: (total) => `共 ${total} 条`,
+      }}
+    />
+  );
+
+  return (
+    <div className={`requirement-list-wrapper${stickyMode ? ' sticky-mode' : ''}`}>
+      {stickyMode ? (
+        <>
+          <div className="sticky-header">
+            {toolbarContent}
+            {quickCreateContent}
+          </div>
+          <div className="table-scroll-container">
+            {tableContent}
+          </div>
+        </>
+      ) : (
+        <>
+          {toolbarContent}
+          {quickCreateContent}
+          {tableContent}
+        </>
+      )}
 
       <TaskForm
         visible={taskFormVisible}

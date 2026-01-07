@@ -179,6 +179,7 @@ def get_project_requirements(
     status: Optional[RequirementStatus] = None,
     priority: Optional[RequirementPriority] = None,
     sprint_id: Optional[int] = None,
+    exclude_sprint_id: Optional[int] = Query(None, description="Exclude requirements from this sprint"),
     category_id: Optional[int] = Query(None, description="Filter by category ID, use -1 for uncategorized"),
     unlinked: bool = Query(False, description="Filter requirements without sprint"),
     assignee_id: Optional[int] = None,
@@ -196,7 +197,10 @@ def get_project_requirements(
         query = query.filter(Requirement.status == status)
     if priority:
         query = query.filter(Requirement.priority == priority)
-    if unlinked:
+    if exclude_sprint_id is not None:
+        # 排除指定迭代的需求（显示未关联的和关联到其他迭代的）
+        query = query.filter(or_(Requirement.sprint_id == None, Requirement.sprint_id != exclude_sprint_id))
+    elif unlinked:
         query = query.filter(Requirement.sprint_id == None)
     elif sprint_id is not None:
         query = query.filter(Requirement.sprint_id == sprint_id)
@@ -363,110 +367,8 @@ def create_requirement(
     return requirement
 
 
-@router.get(
-    "/api/requirements/{requirement_id}", response_model=RequirementDetailResponse
-)
-def get_requirement(
-    requirement_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Get requirement by ID with creator/assignee details"""
-    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
-    if not requirement:
-        raise HTTPException(status_code=404, detail="Requirement not found")
-
-    check_project_access(db, requirement.project_id, current_user)
-    
-    # 加载关联的任务
-    tasks = db.query(Task).filter(Task.requirement_id == requirement.id).all()
-    requirement.tasks = tasks
-    
-    return requirement
-
-
-@router.put("/api/requirements/{requirement_id}", response_model=RequirementResponse)
-def update_requirement(
-    requirement_id: int,
-    req_data: RequirementUpdate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Update requirement"""
-    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
-    if not requirement:
-        raise HTTPException(status_code=404, detail="Requirement not found")
-
-    project = check_project_access(db, requirement.project_id, current_user)
-    check_requirement_permission(requirement, current_user, project, "update")
-
-
-    # Validate sprint if changing
-    if req_data.sprint_id is not None:
-        if req_data.sprint_id != 0:  # 0 means clear sprint
-            sprint = db.query(Sprint).filter(Sprint.id == req_data.sprint_id).first()
-            if not sprint:
-                raise HTTPException(status_code=404, detail="Sprint not found")
-            if sprint.project_id != requirement.project_id:
-                raise HTTPException(
-                    status_code=400, detail="Sprint must belong to the same project"
-                )
-            if sprint.status == SprintStatus.COMPLETED:
-                raise HTTPException(
-                    status_code=400, detail="Cannot assign to completed sprint"
-                )
-        else:
-            req_data.sprint_id = None
-
-    # Apply updates and record history
-    update_data = req_data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        old_value = getattr(requirement, field)
-        # 记录历史（只记录有变更的字段）
-        if old_value != value:
-            # 处理枚举类型
-            old_str = old_value.value if hasattr(old_value, 'value') else str(old_value) if old_value is not None else None
-            new_str = value.value if hasattr(value, 'value') else str(value) if value is not None else None
-            history_entry = RequirementHistory(
-                requirement_id=requirement_id,
-                field=field,
-                old_value=old_str,
-                new_value=new_str,
-                changed_by=current_user.id,
-            )
-            db.add(history_entry)
-        setattr(requirement, field, value)
-
-    db.commit()
-    db.refresh(requirement)
-    return requirement
-
-
-@router.delete(
-    "/api/requirements/{requirement_id}", status_code=status.HTTP_204_NO_CONTENT
-)
-def delete_requirement(
-    requirement_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Delete requirement - sets related bugs requirement_id to null"""
-    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
-    if not requirement:
-        raise HTTPException(status_code=404, detail="Requirement not found")
-
-    project = check_project_access(db, requirement.project_id, current_user)
-    check_requirement_permission(requirement, current_user, project, "delete")
-
-    # Clear requirement_id references in bugs
-    db.query(Bug).filter(Bug.requirement_id == requirement_id).update(
-        {Bug.requirement_id: None}
-    )
-
-    db.delete(requirement)
-    db.commit()
-    return None
-
+# ========== Bulk Operations ==========
+# NOTE: These routes MUST be defined before dynamic /{requirement_id} routes to avoid path conflicts
 
 @router.post("/api/requirements/bulk-delete")
 def bulk_delete_requirements(
@@ -571,6 +473,113 @@ def bulk_update_requirements_sprint(
 
     db.commit()
     return {"message": f"Successfully updated {updated_count} requirements"}
+
+
+# ========== Single Requirement Endpoints ==========
+
+@router.get(
+    "/api/requirements/{requirement_id}", response_model=RequirementDetailResponse
+)
+def get_requirement(
+    requirement_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get requirement by ID with creator/assignee details"""
+    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
+    if not requirement:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+
+    check_project_access(db, requirement.project_id, current_user)
+    
+    # 加载关联的任务
+    tasks = db.query(Task).filter(Task.requirement_id == requirement.id).all()
+    requirement.tasks = tasks
+    
+    return requirement
+
+
+@router.put("/api/requirements/{requirement_id}", response_model=RequirementResponse)
+def update_requirement(
+    requirement_id: int,
+    req_data: RequirementUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update requirement"""
+    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
+    if not requirement:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+
+    project = check_project_access(db, requirement.project_id, current_user)
+    check_requirement_permission(requirement, current_user, project, "update")
+
+
+    # Validate sprint if changing
+    if req_data.sprint_id is not None:
+        if req_data.sprint_id != 0:  # 0 means clear sprint
+            sprint = db.query(Sprint).filter(Sprint.id == req_data.sprint_id).first()
+            if not sprint:
+                raise HTTPException(status_code=404, detail="Sprint not found")
+            if sprint.project_id != requirement.project_id:
+                raise HTTPException(
+                    status_code=400, detail="Sprint must belong to the same project"
+                )
+            if sprint.status == SprintStatus.COMPLETED:
+                raise HTTPException(
+                    status_code=400, detail="Cannot assign to completed sprint"
+                )
+        else:
+            req_data.sprint_id = None
+
+    # Apply updates and record history
+    update_data = req_data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        old_value = getattr(requirement, field)
+        # 记录历史（只记录有变更的字段）
+        if old_value != value:
+            # 处理枚举类型
+            old_str = old_value.value if hasattr(old_value, 'value') else str(old_value) if old_value is not None else None
+            new_str = value.value if hasattr(value, 'value') else str(value) if value is not None else None
+            history_entry = RequirementHistory(
+                requirement_id=requirement_id,
+                field=field,
+                old_value=old_str,
+                new_value=new_str,
+                changed_by=current_user.id,
+            )
+            db.add(history_entry)
+        setattr(requirement, field, value)
+
+    db.commit()
+    db.refresh(requirement)
+    return requirement
+
+
+@router.delete(
+    "/api/requirements/{requirement_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_requirement(
+    requirement_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete requirement - sets related bugs requirement_id to null"""
+    requirement = db.query(Requirement).filter(Requirement.id == requirement_id).first()
+    if not requirement:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+
+    project = check_project_access(db, requirement.project_id, current_user)
+    check_requirement_permission(requirement, current_user, project, "delete")
+
+    # Clear requirement_id references in bugs
+    db.query(Bug).filter(Bug.requirement_id == requirement_id).update(
+        {Bug.requirement_id: None}
+    )
+
+    db.delete(requirement)
+    db.commit()
+    return None
 
 
 # Comment APIs
