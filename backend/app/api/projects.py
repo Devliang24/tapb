@@ -151,6 +151,10 @@ def delete_project(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
+    # Prevent deletion of demo project
+    if project.key == "DEMO":
+        raise HTTPException(status_code=403, detail="示例空间不能删除")
+    
     # Only creator can delete
     if project.creator_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only project creator can delete")

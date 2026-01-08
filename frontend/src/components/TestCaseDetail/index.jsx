@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Tag, Button, Select, message, Modal, Popconfirm, TreeSelect, Timeline, Empty, Table } from 'antd';
-import { DeleteOutlined, CopyOutlined, FolderOutlined, UserOutlined, CalendarOutlined, ClockCircleOutlined, HistoryOutlined, LinkOutlined, BugOutlined, FieldTimeOutlined, DisconnectOutlined } from '@ant-design/icons';
+import { Tag, Button, Select, message, Modal, Popconfirm, TreeSelect, Timeline, Empty, Table, Input } from 'antd';
+import { DeleteOutlined, CopyOutlined, FolderOutlined, UserOutlined, CalendarOutlined, ClockCircleOutlined, HistoryOutlined, LinkOutlined, BugOutlined, FieldTimeOutlined, DisconnectOutlined, ExperimentOutlined, FlagOutlined, AppstoreOutlined, BlockOutlined } from '@ant-design/icons';
 import MarkdownRenderer from '../MarkdownRenderer';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DetailDrawer from '../DetailDrawer';
@@ -313,14 +313,9 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
     updateMutation.mutate({ status: newStatus });
   };
 
-  const getTypeTag = (type) => {
-    const opt = typeOptions.find(o => o.value === type);
-    return opt ? <Tag color={opt.color}>{opt.label}</Tag> : type;
-  };
-
-  const getPriorityTag = (priority) => {
-    const opt = priorityOptions.find(o => o.value === priority);
-    return opt ? <Tag color={opt.color}>{opt.label}</Tag> : priority;
+  // 单字段更新 handler
+  const handleFieldUpdate = (field, value) => {
+    updateMutation.mutate({ [field]: value });
   };
 
   // 获取可选择的缺陷（未关联其他用例的缺陷 + 已关联当前用例的缺陷）
@@ -332,81 +327,105 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
   const sidebarItems = testCase ? [
     {
       label: '用例类型',
-      icon: <FolderOutlined />,
-      value: isEditing ? (
+      icon: <ExperimentOutlined />,
+      value: (
         <Select
-          value={editedType}
-          onChange={setEditedType}
+          value={testCase.type}
+          onChange={(value) => handleFieldUpdate('type', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           options={typeOptions}
         />
-      ) : getTypeTag(testCase.type),
+      ),
     },
     {
       label: '用例等级',
-      icon: <FolderOutlined />,
-      value: isEditing ? (
+      icon: <FlagOutlined />,
+      value: (
         <Select
-          value={editedPriority}
-          onChange={setEditedPriority}
+          value={testCase.priority}
+          onChange={(value) => handleFieldUpdate('priority', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           options={priorityOptions}
         />
-      ) : getPriorityTag(testCase.priority),
+      ),
     },
     {
       label: '所属目录',
       icon: <FolderOutlined />,
-      value: isEditing ? (
+      value: (
         <TreeSelect
-          value={editedCategoryId}
-          onChange={setEditedCategoryId}
+          value={testCase.category_id ?? 0}
+          onChange={(value) => handleFieldUpdate('category_id', value)}
           treeData={categoryTreeData}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择目录"
           allowClear
           treeLine
         />
-      ) : (testCase.category?.name || '未分类'),
+      ),
     },
     {
       label: '模块',
-      icon: <FolderOutlined />,
-      value: isEditing ? (
-        <input
-          type="text"
-          value={editedModule}
-          onChange={(e) => setEditedModule(e.target.value)}
+      icon: <AppstoreOutlined />,
+      value: (
+        <Input
+          key={`module-${testCase.module}`}
+          defaultValue={testCase.module || ''}
+          onBlur={(e) => {
+            if (e.target.value !== (testCase.module || '')) {
+              handleFieldUpdate('module', e.target.value);
+            }
+          }}
+          onPressEnter={(e) => {
+            if (e.target.value !== (testCase.module || '')) {
+              handleFieldUpdate('module', e.target.value);
+            }
+          }}
           placeholder="输入模块"
-          style={{ width: '100%', padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 4, fontSize: 14 }}
+          size="small"
+          variant="borderless"
         />
-      ) : (testCase.module || '-'),
+      ),
     },
     {
       label: '功能',
-      icon: <FolderOutlined />,
-      value: isEditing ? (
-        <input
-          type="text"
-          value={editedFeature}
-          onChange={(e) => setEditedFeature(e.target.value)}
+      icon: <BlockOutlined />,
+      value: (
+        <Input
+          key={`feature-${testCase.feature}`}
+          defaultValue={testCase.feature || ''}
+          onBlur={(e) => {
+            if (e.target.value !== (testCase.feature || '')) {
+              handleFieldUpdate('feature', e.target.value);
+            }
+          }}
+          onPressEnter={(e) => {
+            if (e.target.value !== (testCase.feature || '')) {
+              handleFieldUpdate('feature', e.target.value);
+            }
+          }}
           placeholder="输入功能"
-          style={{ width: '100%', padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 4, fontSize: 14 }}
+          size="small"
+          variant="borderless"
         />
-      ) : (testCase.feature || '-'),
+      ),
     },
     {
       label: '迭代',
       icon: <FieldTimeOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedSprintId}
-          onChange={setEditedSprintId}
+          value={testCase.sprint_id}
+          onChange={(value) => handleFieldUpdate('sprint_id', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择迭代"
           allowClear
           showSearch
@@ -418,17 +437,18 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
             </Select.Option>
           ))}
         </Select>
-      ) : testCase.sprint?.name || '-',
+      ),
     },
     {
       label: '关联需求',
       icon: <LinkOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedRequirementId}
-          onChange={setEditedRequirementId}
+          value={testCase.requirement_id}
+          onChange={(value) => handleFieldUpdate('requirement_id', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择需求"
           allowClear
           showSearch
@@ -440,32 +460,12 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
             </Select.Option>
           ))}
         </Select>
-      ) : testCase.requirement ? (
-        <Tag color="blue">{testCase.requirement.requirement_number}</Tag>
-      ) : '-',
+      ),
     },
     {
       label: '关联缺陷',
       icon: <BugOutlined />,
-      value: isEditing ? (
-        <Select
-          mode="multiple"
-          value={editedBugIds}
-          onChange={setEditedBugIds}
-          style={{ width: '100%' }}
-          size="small"
-          placeholder="选择缺陷"
-          showSearch
-          optionFilterProp="children"
-          maxTagCount={2}
-        >
-          {availableBugs.map(bug => (
-            <Select.Option key={bug.id} value={bug.id}>
-              {bug.bug_number} - {bug.title}
-            </Select.Option>
-          ))}
-        </Select>
-      ) : bugs?.items?.length > 0 ? (
+      value: bugs?.items?.length > 0 ? (
         <Tag color="orange">{bugs.items.length} 个</Tag>
       ) : '-',
     },

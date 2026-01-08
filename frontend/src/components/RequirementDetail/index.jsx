@@ -363,65 +363,74 @@ const { data: members } = useQuery({
     return opt ? <Tag color={opt.color}>{opt.label}</Tag> : priority;
   };
 
+  // 单字段更新 handler
+  const handleFieldUpdate = (field, value) => {
+    updateMutation.mutate({ [field]: value });
+  };
+
   // 构建右侧边栏信息
   const sidebarItems = requirement ? [
     {
       label: '状态',
       icon: <CheckCircleOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedStatus}
-          onChange={setEditedStatus}
+          value={requirement.status}
+          onChange={(value) => handleFieldUpdate('status', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           options={statusOptions}
         />
-      ) : getStatusTag(requirement.status),
+      ),
     },
     {
       label: '优先级',
       icon: <ExclamationCircleOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedPriority}
-          onChange={setEditedPriority}
+          value={requirement.priority}
+          onChange={(value) => handleFieldUpdate('priority', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           options={priorityOptions}
         />
-      ) : getPriorityTag(requirement.priority),
+      ),
     },
     {
       label: '负责人',
       icon: <UserAddOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedAssigneeId}
-          onChange={setEditedAssigneeId}
+          value={requirement.assignee_id}
+          onChange={(value) => handleFieldUpdate('assignee_id', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择负责人"
           allowClear
           showSearch
           optionFilterProp="children"
         >
-{members?.map((m) => (
+          {members?.map((m) => (
             <Select.Option key={m.user_id} value={m.user_id}>
               {m.user?.username}
             </Select.Option>
           ))}
         </Select>
-      ) : (requirement.assignee?.username || '-'),
+      ),
     },
     {
       label: '迭代',
       icon: <FieldTimeOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedSprintId}
-          onChange={setEditedSprintId}
+          value={requirement.sprint_id}
+          onChange={(value) => handleFieldUpdate('sprint_id', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择迭代"
           allowClear
         >
@@ -431,7 +440,7 @@ const { data: members } = useQuery({
             </Select.Option>
           ))}
         </Select>
-      ) : (requirement.sprint?.name || '-'),
+      ),
     },
     {
       label: '创建人',
@@ -608,15 +617,14 @@ const { data: members } = useQuery({
         key: 'action',
         width: 60,
         render: (_, record) => (
-          <Popconfirm
-            title="移除关联"
-            description="确定要移除此关联吗？"
-            onConfirm={() => unlinkTaskMutation.mutate(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
-          </Popconfirm>
+          <Button 
+            type="text" 
+            size="small" 
+            danger 
+            icon={<DisconnectOutlined />} 
+            title="移除关联" 
+            onClick={() => unlinkTaskMutation.mutate(record.id)}
+          />
         ),
       },
     ];
@@ -676,15 +684,14 @@ const { data: members } = useQuery({
         key: 'action',
         width: 60,
         render: (_, record) => (
-          <Popconfirm
-            title="移除关联"
-            description="确定要移除此关联吗？"
-            onConfirm={() => unlinkTestCaseMutation.mutate(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
-          </Popconfirm>
+          <Button 
+            type="text" 
+            size="small" 
+            danger 
+            icon={<DisconnectOutlined />} 
+            title="移除关联" 
+            onClick={() => unlinkTestCaseMutation.mutate(record.id)}
+          />
         ),
       },
     ];
@@ -770,15 +777,14 @@ const { data: members } = useQuery({
         key: 'action',
         width: 60,
         render: (_, record) => (
-          <Popconfirm
-            title="移除关联"
-            description="确定要移除此关联吗？"
-            onConfirm={() => unlinkBugMutation.mutate(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
-          </Popconfirm>
+          <Button 
+            type="text" 
+            size="small" 
+            danger 
+            icon={<DisconnectOutlined />} 
+            title="移除关联" 
+            onClick={() => unlinkBugMutation.mutate(record.id)}
+          />
         ),
       },
     ];

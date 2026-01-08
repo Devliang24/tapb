@@ -16,7 +16,7 @@ from app.models.user import User
 from app.models.project import Project, ProjectMember
 from app.models.sprint import Sprint, SprintStatus
 from app.models.requirement import (
-    Requirement, RequirementStatus, RequirementPriority,
+    Requirement, RequirementStatus, RequirementPriority, RequirementCategory,
 )
 from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.bug import BugStatus, BugPriority, BugSeverity
@@ -135,7 +135,7 @@ def clear_project_data(db, project: Project):
     from app.models.comment import BugComment
     from app.models.task import Task
     from app.models.comment import TaskComment, RequirementComment
-    from app.models.requirement import Requirement
+    from app.models.requirement import Requirement, RequirementCategory
     from app.models.sprint import Sprint
 
     # Bugs
@@ -157,6 +157,9 @@ def clear_project_data(db, project: Project):
 
     # Sprints
     db.query(Sprint).filter(Sprint.project_id==project.id).delete(synchronize_session=False)
+
+    # Requirement categories
+    db.query(RequirementCategory).filter(RequirementCategory.project_id==project.id).delete(synchronize_session=False)
 
     # Reset counters
     project.bug_seq = 0
@@ -236,6 +239,22 @@ def main():
         if project.creator_id not in member_ids:
             member_ids.append(project.creator_id)
 
+        # Create requirement categories based on FEATURE_POOL modules
+        category_map = {}  # module -> category_id
+        for idx, feature in enumerate(FEATURE_POOL):
+            module_name = feature['module'].split('/')[0]  # 取中文名
+            if module_name not in category_map:
+                cat = RequirementCategory(
+                    project_id=project.id,
+                    parent_id=None,
+                    name=module_name,
+                    order=idx
+                )
+                db.add(cat)
+                db.flush()
+                category_map[module_name] = cat.id
+        print(f"  Created {len(category_map)} requirement categories")
+
         # N sprints（从配置的开始日期按迭代时长顺序生成）
         feature_cycle = itertools.cycle(FEATURE_POOL)
         base_start = datetime.strptime(CONFIG['START_DATE'], '%Y-%m-%d').date()
@@ -277,9 +296,14 @@ def main():
                     RequirementStatus.IN_PROGRESS,
                     RequirementStatus.COMPLETED,
                 ])
+                # Get category_id from module name
+                module_name = theme['module'].split('/')[0]
+                category_id = category_map.get(module_name)
+                
                 req = Requirement(
                     project_id=project.id,
                     sprint_id=sprint.id,
+                    category_id=category_id,
                     requirement_number="TEMP",  # Will be updated after getting ID
                     title=f"{_title_mixed(theme['module'])} - {_title_mixed(page)} - 第 {r+1} 次迭代",
 description=(

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Drawer, Tabs, Button, Spin, Select, Input } from 'antd';
-import { EditOutlined, ExpandOutlined, CompressOutlined, UpOutlined, DownOutlined } from '@ant-design/icons';
+import { EditOutlined, ExpandOutlined, CompressOutlined, UpOutlined, DownOutlined, CloseOutlined } from '@ant-design/icons';
 import './index.css';
 
 /**
@@ -71,48 +71,59 @@ const DetailDrawer = ({
   const [expanded, setExpanded] = useState(false);
   const drawerRef = useRef(null);
 
-  // 点击抽屉外部关闭
-  // 记录最近是否有弹出层交互
+  // mask=false 时，抽屉外点击默认不会关闭，这里实现“点击空白区域关闭”
+  // 同时避免在 Select/Popconfirm 等弹出层交互时误触发关闭
   const recentPopupInteraction = useRef(false);
 
   useEffect(() => {
     if (!visible) return;
 
-    // 监听弹出层的 mousedown，记录交互
+    const popupSelectors = '.ant-select-dropdown, .ant-popover, .ant-popconfirm, .ant-dropdown, .ant-modal, .ant-picker-dropdown, .ant-tree-select-dropdown, .ant-tooltip';
+
+    const markPopupInteraction = () => {
+      recentPopupInteraction.current = true;
+      window.setTimeout(() => {
+        recentPopupInteraction.current = false;
+      }, 300);
+    };
+
+    // 用 capture 保证即使组件内部 stopPropagation，我们也能记录到弹出层交互
     const handlePopupMouseDown = (event) => {
-      const isInPopup = event.target.closest('.ant-select-dropdown, .ant-popover, .ant-popconfirm, .ant-dropdown, .ant-modal, .ant-picker-dropdown, .ant-tree-select-dropdown');
-      if (isInPopup) {
-        recentPopupInteraction.current = true;
-        // 500ms 后重置
-        setTimeout(() => {
-          recentPopupInteraction.current = false;
-        }, 500);
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      if (target.closest(popupSelectors)) {
+        markPopupInteraction();
       }
     };
 
     const handleClickOutside = (event) => {
-      // 如果最近有弹出层交互，跳过
-      if (recentPopupInteraction.current) {
-        return;
-      }
-      // 检查点击是否在抽屉内部
-      const drawerContent = document.querySelector('.ant-drawer-content-wrapper');
-      // 排除下拉菜单、弹出层、模态框等
-      const isInPopup = event.target.closest('.ant-select-dropdown, .ant-popover, .ant-popconfirm, .ant-dropdown, .ant-modal, .ant-picker-dropdown, .ant-tree-select-dropdown');
-      if (drawerContent && !drawerContent.contains(event.target) && !isInPopup) {
-        onClose?.();
-      }
+      if (recentPopupInteraction.current) return;
+
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      // 检查是否点击在弹出层内
+      const isInPopup = target.closest(popupSelectors);
+      if (isInPopup) return;
+
+      // 检查是否点击在任何抽屉内容内
+      const isInDrawer = target.closest('.ant-drawer-content-wrapper');
+      if (isInDrawer) return;
+
+      // 点击在抽屉外部，关闭抽屉
+      onClose?.();
     };
 
-    // 延迟添加事件监听，避免立即触发
-    const timer = setTimeout(() => {
-      document.addEventListener('mousedown', handlePopupMouseDown);
+    // 延迟添加事件监听，避免打开抽屉的那次点击立即触发关闭
+    const timer = window.setTimeout(() => {
+      document.addEventListener('mousedown', handlePopupMouseDown, true);
       document.addEventListener('click', handleClickOutside);
     }, 200);
 
     return () => {
-      clearTimeout(timer);
-      document.removeEventListener('mousedown', handlePopupMouseDown);
+      window.clearTimeout(timer);
+      document.removeEventListener('mousedown', handlePopupMouseDown, true);
       document.removeEventListener('click', handleClickOutside);
     };
   }, [visible, onClose]);
@@ -175,6 +186,13 @@ const DetailDrawer = ({
           onClick={() => setExpanded(!expanded)}
         />
         {extraActions}
+        <Button
+          type="text"
+          size="small"
+          icon={<CloseOutlined />}
+          onClick={onClose}
+          title="关闭"
+        />
         {(onPrev || onNext) && (
           <>
             <Button

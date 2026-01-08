@@ -108,15 +108,23 @@ const Layout = ({ children }) => {
   const handleTabChange = (key) => {
     const projectId = location.pathname.match(/\/projects\/(\d+)/)?.[1];
     if (!projectId) return;
-    
+
     if (key === 'iterations') {
-      navigate(`/projects/${projectId}`);
+      navigate(`/projects/${projectId}/iterations`);
     } else if (key === 'requirements') {
       navigate(`/projects/${projectId}/requirements`);
     } else if (key === 'testcases') {
       navigate(`/projects/${projectId}/testcases`);
     } else {
       navigate(`/projects/${projectId}?tab=${key}`);
+    }
+  };
+
+  // 在设置页（settings-mode）中，activeKey 默认是 iterations，点击同一个 tab 不会触发 onChange
+  // 这里用 onTabClick 补齐“点击当前 tab 也能跳转”的行为
+  const handleTabClick = (key) => {
+    if (isProjectSettings && key === activeTab) {
+      handleTabChange(key);
     }
   };
 
@@ -246,6 +254,7 @@ const Layout = ({ children }) => {
               activeKey={activeTab}
               items={tabItems}
               onChange={handleTabChange}
+              onTabClick={handleTabClick}
               className={`project-tabs ${isProjectSettings ? 'settings-mode' : ''}`}
               tabBarExtraContent={
                 <div className="tab-extra-right">

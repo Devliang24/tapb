@@ -165,8 +165,8 @@ const ProjectSettings = () => {
 
   // 成员管理 Tab
   const renderMembersTab = () => (
-    <Card title="空间成员" extra={<span style={{ color:'#999' }}>只有加入成员才能访问该空间资源</span>}>
-      <div style={{ marginBottom: 12 }}>
+    <div>
+      <div style={{ marginBottom: 16 }}>
         <Form form={form} layout="inline" className="project-settings-form" onFinish={handleAdd}>
           <Form.Item name="user_ids" className="member-select-item" rules={[{ required: true, message: '请选择用户' }]}>
             <Select 
@@ -174,7 +174,6 @@ const ProjectSettings = () => {
               mode="multiple"
               showSearch 
               placeholder="选择用户（可多选）"
-              style={{ width: 360 }}
               maxTagCount="responsive"
               maxTagPlaceholder="..."
               options={userOptions}
@@ -182,7 +181,7 @@ const ProjectSettings = () => {
             />
           </Form.Item>
           <Form.Item name="role" initialValue="member" rules={[{ required: true }] }>
-            <Select style={{ width: 140 }} options={[{value:'member', label:'成员'},{value:'owner', label:'所有者'}]} />
+            <Select style={{ width: 100 }} options={[{value:'member', label:'成员'},{value:'owner', label:'所有者'}]} />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={addMutation.isPending}>添加成员</Button>
@@ -200,6 +199,7 @@ const ProjectSettings = () => {
               </Form.Item>
             </>
           )}
+          <span style={{ color: '#999', marginLeft: 'auto' }}>只有加入成员才能访问该空间资源</span>
         </Form>
       </div>
 
@@ -215,12 +215,12 @@ const ProjectSettings = () => {
           getCheckboxProps: (record) => ({ disabled: record.role === 'owner' })
         }}
       />
-    </Card>
+    </div>
   );
 
   // 空间设置 Tab
   const renderProjectTab = () => (
-    <Card title="空间信息">
+    <div>
       <Form
         form={projectForm}
         layout="vertical"
@@ -249,7 +249,7 @@ const ProjectSettings = () => {
         </Form.Item>
       </Form>
 
-      <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid #f0f0f0' }}>
+      <div style={{ marginTop: 48, paddingTop: 24, borderTop: '1px solid #f0f0f0', maxWidth: 500 }}>
         <h4 style={{ color: '#ff4d4f', marginBottom: 16 }}>危险操作</h4>
         <Button danger onClick={handleDeleteProject} loading={deleteProjectMutation.isPending}>
           删除空间
@@ -258,7 +258,7 @@ const ProjectSettings = () => {
           删除后无法恢复，请谨慎操作
         </p>
       </div>
-    </Card>
+    </div>
   );
 
   const tabItems = [

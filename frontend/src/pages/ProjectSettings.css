@@ -1,14 +1,20 @@
 .project-settings-form {
   display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: 8px;
 }
 
+.project-settings-form .ant-form-item {
+  margin-bottom: 0;
+}
+
 .member-select-item {
-  margin-right: 8px;
+  margin-right: 0;
 }
 
 .member-select {
-  width: 360px !important;
+  width: 300px !important;
 }
 
 /* 单行显示并省略 */

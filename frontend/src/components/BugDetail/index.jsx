@@ -312,19 +312,9 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
     deleteCommentMutation.mutate(commentId);
   };
 
-  const getStatusTag = (status) => {
-    const opt = statusOptions.find(o => o.value === status);
-    return opt ? <Tag color={opt.color}>{opt.label}</Tag> : status;
-  };
-
-  const getPriorityTag = (priority) => {
-    const opt = priorityOptions.find(o => o.value === priority);
-    return opt ? <Tag color={opt.color}>{opt.label}</Tag> : priority;
-  };
-
-  const getSeverityTag = (severity) => {
-    const opt = severityOptions.find(o => o.value === severity);
-    return opt ? <Tag color={opt.color}>{opt.label}</Tag> : severity;
+  // 单字段更新 handler
+  const handleFieldUpdate = (field, value) => {
+    updateMutation.mutate({ [field]: value });
   };
 
   // 构建右侧边栏信息
@@ -332,58 +322,59 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
     {
       label: '状态',
       icon: <CheckCircleOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedStatus}
-          onChange={setEditedStatus}
+          value={bug.status}
+          onChange={(value) => handleFieldUpdate('status', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           options={statusOptions}
         />
-      ) : getStatusTag(bug.status),
+      ),
     },
     {
       label: '优先级',
       icon: <ExclamationCircleOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedPriority}
-          onChange={setEditedPriority}
+          value={bug.priority}
+          onChange={(value) => handleFieldUpdate('priority', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           options={priorityOptions}
         />
-      ) : getPriorityTag(bug.priority),
+      ),
     },
     {
       label: '严重程度',
       icon: <ExclamationCircleOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedSeverity}
-          onChange={setEditedSeverity}
+          value={bug.severity}
+          onChange={(value) => handleFieldUpdate('severity', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           options={severityOptions}
         />
-      ) : getSeverityTag(bug.severity),
+      ),
     },
     {
       label: '处理人',
       icon: <UserAddOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedAssigneeId}
-          onChange={setEditedAssigneeId}
+          value={bug.assignee_id}
+          onChange={(value) => handleFieldUpdate('assignee_id', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择处理人"
           allowClear
           showSearch
           optionFilterProp="children"
-          filterOption={(input, option) =>
-            (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
-          }
         >
           {projectMembers?.map(member => (
             <Select.Option key={member.user_id} value={member.user_id}>
@@ -391,7 +382,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
             </Select.Option>
           ))}
         </Select>
-      ) : (bug.assignee?.username || '未分配'),
+      ),
     },
     {
       label: '创建人',
@@ -401,78 +392,69 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
     {
       label: '关联需求',
       icon: <LinkOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedRequirementId}
-          onChange={setEditedRequirementId}
+          value={bug.requirement_id}
+          onChange={(value) => handleFieldUpdate('requirement_id', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择关联需求"
           allowClear
           showSearch
           optionFilterProp="children"
-          filterOption={(input, option) =>
-            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-          }
           popupMatchSelectWidth={280}
         >
           {requirements?.items?.map(req => (
-            <Select.Option
-              key={req.id}
-              value={req.id}
-              label={`${req.requirement_number} - ${req.title}`}
-            >
+            <Select.Option key={req.id} value={req.id}>
               {req.requirement_number} - {req.title}
             </Select.Option>
           ))}
         </Select>
-      ) : (
-        bug.requirement ? `${bug.requirement.requirement_number}` : '未关联'
       ),
     },
     {
       label: '发现环境',
       icon: <GlobalOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedEnvironment}
-          onChange={setEditedEnvironment}
+          value={bug.environment}
+          onChange={(value) => handleFieldUpdate('environment', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择发现环境"
           allowClear
           options={environmentOptions}
         />
-      ) : (
-        environmentOptions.find(o => o.value === bug.environment)?.label || '未设置'
       ),
     },
     {
       label: '缺陷原因',
       icon: <BugOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedDefectCause}
-          onChange={setEditedDefectCause}
+          value={bug.defect_cause}
+          onChange={(value) => handleFieldUpdate('defect_cause', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择缺陷原因"
           allowClear
           options={defectCauseOptions}
         />
-      ) : (
-        defectCauseOptions.find(o => o.value === bug.defect_cause)?.label || '未设置'
       ),
     },
     {
       label: '迭代',
       icon: <AimOutlined />,
-      value: isEditing ? (
+      value: (
         <Select
-          value={editedSprintId}
-          onChange={setEditedSprintId}
+          value={bug.sprint_id}
+          onChange={(value) => handleFieldUpdate('sprint_id', value)}
           style={{ width: '100%' }}
           size="small"
+          variant="borderless"
           placeholder="选择迭代"
           allowClear
         >
@@ -482,7 +464,7 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
             </Select.Option>
           ))}
         </Select>
-      ) : (bug.sprint?.name?.split(' (')[0] || bug.sprint?.name || '未设置'),
+      ),
     },
     {
       label: '创建时间',
@@ -665,15 +647,14 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
         key: 'action',
         width: 60,
         render: () => (
-          <Popconfirm
-            title="移除关联"
-            description="确定要移除此关联吗？"
-            onConfirm={() => unlinkTestCaseMutation.mutate()}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
-          </Popconfirm>
+          <Button 
+            type="text" 
+            size="small" 
+            danger 
+            icon={<DisconnectOutlined />} 
+            title="移除关联" 
+            onClick={() => unlinkTestCaseMutation.mutate()}
+          />
         ),
       },
     ];
@@ -842,15 +823,14 @@ const BugDetail = ({ bugId, visible, onClose, onUpdate, projectId, onPrev, onNex
         key: 'action',
         width: 60,
         render: () => (
-          <Popconfirm
-            title="移除关联"
-            description="确定要移除此关联吗？"
-            onConfirm={() => unlinkRequirementMutation.mutate()}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" size="small" danger icon={<DisconnectOutlined />} title="移除关联" />
-          </Popconfirm>
+          <Button 
+            type="text" 
+            size="small" 
+            danger 
+            icon={<DisconnectOutlined />} 
+            title="移除关联" 
+            onClick={() => unlinkRequirementMutation.mutate()}
+          />
         ),
       },
     ];

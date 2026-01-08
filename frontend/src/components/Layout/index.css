@@ -261,6 +261,12 @@
   margin-bottom: 0 !important;
 }
 
+.project-tabs .ant-tabs-extra-content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
 .project-tabs .ant-tabs-nav::before {
   display: none !important;
 }
@@ -291,21 +297,28 @@ padding: 16px 2px !important;
 
 .tab-extra-right {
   margin-left: auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
+/* 让“设置”看起来和其它 tab 一致（参考 .project-tabs .ant-tabs-tab 的样式） */
 .tab-extra-item {
-  padding: 16px 16px;
+  display: inline-flex;
+  align-items: center;
+  padding: 16px 2px;
   cursor: pointer;
   color: var(--text-secondary);
-  position: relative;
+  font-size: 15px;
+  font-weight: 500;
   border-bottom: 2px solid transparent;
+  transition: all var(--transition-normal);
 }
 
 .tab-extra-item:hover {
   color: var(--primary-color);
 }
 
-/* 设置tab的高亮样式（与迭代tab一致，使用边框线） */
 .tab-extra-item.active {
   color: var(--primary-color);
   font-weight: 600;
