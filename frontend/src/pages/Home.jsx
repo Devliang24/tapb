@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Button, Empty } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -16,12 +17,13 @@ const Home = () => {
   });
 
   // 如果已登录且有项目，自动跳转到第一个项目
-  if (isAuthenticated && projects?.length > 0 && !isLoading) {
-    const lastProjectId = localStorage.getItem('lastProjectId');
-    const targetProject = projects.find(p => String(p.id) === lastProjectId) || projects[0];
-    navigate(`/projects/${targetProject.id}/iterations`, { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated && projects?.length > 0 && !isLoading) {
+      const lastProjectId = localStorage.getItem('lastProjectId');
+      const targetProject = projects.find(p => String(p.id) === lastProjectId) || projects[0];
+      navigate(`/projects/${targetProject.id}/iterations`, { replace: true });
+    }
+  }, [isAuthenticated, projects, isLoading, navigate]);
 
   // 未登录或没有项目时显示空状态
   return (
