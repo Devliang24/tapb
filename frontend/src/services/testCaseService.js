@@ -74,6 +74,29 @@ const testCaseService = {
     const response = await api.get(`/api/testcases/${id}/history`);
     return response.data;
   },
+
+  // ========== 导入导出 ==========
+
+  // 下载导入模板
+  downloadTemplate: () => {
+    return api.get('/api/testcases/template', { responseType: 'blob' });
+  },
+
+  // 导出测试用例
+  exportTestCases: (params) => {
+    return api.get('/api/testcases/export', { params, responseType: 'blob' });
+  },
+
+  // 导入测试用例
+  importTestCases: async (file, projectId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('project_id', projectId);
+    const response = await api.post('/api/testcases/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };
 
 export default testCaseService;

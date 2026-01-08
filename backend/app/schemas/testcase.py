@@ -49,9 +49,13 @@ class TestCaseCreate(TestCaseBase):
     requirement_id: Optional[int] = None
     sprint_id: Optional[int] = None
     status: TestCaseStatus = TestCaseStatus.NOT_EXECUTED
+    module: Optional[str] = None
+    feature: Optional[str] = None
     precondition: Optional[str] = None
     steps: Optional[str] = None
+    test_data: Optional[str] = None
     expected_result: Optional[str] = None
+    actual_result: Optional[str] = None
 
 
 class TestCaseUpdate(BaseModel):
@@ -62,9 +66,13 @@ class TestCaseUpdate(BaseModel):
     category_id: Optional[int] = None
     requirement_id: Optional[int] = None
     sprint_id: Optional[int] = None
+    module: Optional[str] = None
+    feature: Optional[str] = None
     precondition: Optional[str] = None
     steps: Optional[str] = None
+    test_data: Optional[str] = None
     expected_result: Optional[str] = None
+    actual_result: Optional[str] = None
 
 
 class UserBrief(BaseModel):
@@ -108,9 +116,13 @@ class TestCaseResponse(TestCaseBase):
     sprint_id: Optional[int] = None
     case_number: str
     status: TestCaseStatus
+    module: Optional[str] = None
+    feature: Optional[str] = None
     precondition: Optional[str] = None
     steps: Optional[str] = None
+    test_data: Optional[str] = None
     expected_result: Optional[str] = None
+    actual_result: Optional[str] = None
     creator_id: int
     created_at: datetime
     updated_at: datetime

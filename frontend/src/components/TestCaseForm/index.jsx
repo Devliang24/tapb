@@ -31,12 +31,16 @@ const priorityOptions = [
 const defaultPrecondition = `<p>输入前置条件...</p>`;
 const defaultSteps = `<h4>步骤 1</h4><p></p><h4>步骤 2</h4><p></p>`;
 const defaultExpectedResult = `<p>输入预期结果...</p>`;
+const defaultTestData = ``;
+const defaultActualResult = ``;
 
 const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
   const [form] = Form.useForm();
   const [precondition, setPrecondition] = useState(defaultPrecondition);
   const [steps, setSteps] = useState(defaultSteps);
+  const [testData, setTestData] = useState(defaultTestData);
   const [expectedResult, setExpectedResult] = useState(defaultExpectedResult);
+  const [actualResult, setActualResult] = useState(defaultActualResult);
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
 
@@ -91,10 +95,14 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
           category_id: testCase.category_id,
           requirement_id: testCase.requirement_id,
           sprint_id: testCase.sprint_id,
+          module: testCase.module,
+          feature: testCase.feature,
         });
         setPrecondition(testCase.precondition || defaultPrecondition);
         setSteps(testCase.steps || defaultSteps);
+        setTestData(testCase.test_data || defaultTestData);
         setExpectedResult(testCase.expected_result || defaultExpectedResult);
+        setActualResult(testCase.actual_result || defaultActualResult);
       } else {
         form.resetFields();
         form.setFieldsValue({
@@ -105,7 +113,9 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
         });
         setPrecondition(defaultPrecondition);
         setSteps(defaultSteps);
+        setTestData(defaultTestData);
         setExpectedResult(defaultExpectedResult);
+        setActualResult(defaultActualResult);
       }
     }
   }, [open, testCase, testCaseId, categoryId, form]);
@@ -119,7 +129,9 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
         ...values,
         precondition,
         steps,
+        test_data: testData,
         expected_result: expectedResult,
+        actual_result: actualResult,
         project_id: projectId,
         // 将 0 转换回 null（未分类）
         category_id: values.category_id === 0 ? null : values.category_id,
@@ -149,7 +161,9 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
         });
         setPrecondition(defaultPrecondition);
         setSteps(defaultSteps);
+        setTestData(defaultTestData);
         setExpectedResult(defaultExpectedResult);
+        setActualResult(defaultActualResult);
       } else {
         onClose();
       }
@@ -246,6 +260,25 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
+              name="module"
+              label="模块"
+            >
+              <Input placeholder="请输入模块名称" maxLength={200} />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              name="feature"
+              label="功能"
+            >
+              <Input placeholder="请输入功能名称" maxLength={200} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
               name="requirement_id"
               label="关联需求"
             >
@@ -300,11 +333,29 @@ const TestCaseForm = ({ open, onClose, projectId, testCaseId, categoryId }) => {
           />
         </Form.Item>
 
+        <Form.Item label="测试数据">
+          <MarkdownEditor
+            value={testData}
+            onChange={(val) => setTestData(val || '')}
+            height={120}
+            placeholder="输入测试数据，如输入参数、测试文件、配置信息等"
+          />
+        </Form.Item>
+
         <Form.Item label="预期结果">
           <MarkdownEditor
             value={expectedResult}
             onChange={(val) => setExpectedResult(val || '')}
             height={150}
+          />
+        </Form.Item>
+
+        <Form.Item label="实际结果">
+          <MarkdownEditor
+            value={actualResult}
+            onChange={(val) => setActualResult(val || '')}
+            height={120}
+            placeholder="执行测试后填写实际结果"
           />
         </Form.Item>
       </Form>

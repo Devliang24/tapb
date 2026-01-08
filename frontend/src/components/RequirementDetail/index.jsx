@@ -28,10 +28,9 @@ const priorityOptions = [
 ];
 
 const taskStatusOptions = [
-  { value: 'pending', label: '待处理', color: 'default' },
+  { value: 'todo', label: '待处理', color: 'default' },
   { value: 'in_progress', label: '进行中', color: 'processing' },
-  { value: 'completed', label: '已完成', color: 'success' },
-  { value: 'cancelled', label: '已取消', color: 'error' },
+  { value: 'done', label: '已完成', color: 'success' },
 ];
 
 const bugStatusOptions = [

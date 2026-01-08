@@ -55,6 +55,10 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
   const [editedRequirementId, setEditedRequirementId] = useState(null);
   const [editedSprintId, setEditedSprintId] = useState(null);
   const [editedBugIds, setEditedBugIds] = useState([]);
+  const [editedModule, setEditedModule] = useState('');
+  const [editedFeature, setEditedFeature] = useState('');
+  const [editedTestData, setEditedTestData] = useState('');
+  const [editedActualResult, setEditedActualResult] = useState('');
 
   const { data: testCase, isLoading } = useQuery({
     queryKey: ['testcase', testCaseId],
@@ -134,6 +138,10 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
       setEditedCategoryId(testCase.category_id ?? 0);
       setEditedRequirementId(testCase.requirement_id);
       setEditedSprintId(testCase.sprint_id);
+      setEditedModule(testCase.module || '');
+      setEditedFeature(testCase.feature || '');
+      setEditedTestData(testCase.test_data || '');
+      setEditedActualResult(testCase.actual_result || '');
     }
   }, [testCase]);
 
@@ -237,6 +245,10 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
       category_id: editedCategoryId === 0 ? null : editedCategoryId,
       requirement_id: editedRequirementId || null,
       sprint_id: editedSprintId || null,
+      module: editedModule || null,
+      feature: editedFeature || null,
+      test_data: editedTestData || null,
+      actual_result: editedActualResult || null,
     });
 
     // 处理缺陷关联变化
@@ -274,6 +286,10 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
       setEditedCategoryId(testCase.category_id);
       setEditedRequirementId(testCase.requirement_id);
       setEditedSprintId(testCase.sprint_id);
+      setEditedModule(testCase.module || '');
+      setEditedFeature(testCase.feature || '');
+      setEditedTestData(testCase.test_data || '');
+      setEditedActualResult(testCase.actual_result || '');
     }
     // 重置缺陷关联
     if (bugs?.items) {
@@ -355,6 +371,32 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
           treeLine
         />
       ) : (testCase.category?.name || '未分类'),
+    },
+    {
+      label: '模块',
+      icon: <FolderOutlined />,
+      value: isEditing ? (
+        <input
+          type="text"
+          value={editedModule}
+          onChange={(e) => setEditedModule(e.target.value)}
+          placeholder="输入模块"
+          style={{ width: '100%', padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 4, fontSize: 14 }}
+        />
+      ) : (testCase.module || '-'),
+    },
+    {
+      label: '功能',
+      icon: <FolderOutlined />,
+      value: isEditing ? (
+        <input
+          type="text"
+          value={editedFeature}
+          onChange={(e) => setEditedFeature(e.target.value)}
+          placeholder="输入功能"
+          style={{ width: '100%', padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 4, fontSize: 14 }}
+        />
+      ) : (testCase.feature || '-'),
     },
     {
       label: '迭代',
@@ -502,6 +544,46 @@ const TestCaseDetail = ({ open, onClose, testCaseId, projectId, onPrev, onNext, 
               <HtmlContent content={testCase.expected_result} />
             ) : (
               <span className="empty-text">暂无预期结果</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="detail-drawer-section">
+        <div className="detail-drawer-section-title">测试数据</div>
+        {isEditing ? (
+          <RichTextEditor
+            value={editedTestData}
+            onChange={(val) => setEditedTestData(val || '')}
+            height={150}
+            placeholder="输入测试数据..."
+          />
+        ) : (
+          <div className="detail-drawer-description">
+            {testCase?.test_data ? (
+              <HtmlContent content={testCase.test_data} />
+            ) : (
+              <span className="empty-text">暂无测试数据</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="detail-drawer-section">
+        <div className="detail-drawer-section-title">实际结果</div>
+        {isEditing ? (
+          <RichTextEditor
+            value={editedActualResult}
+            onChange={(val) => setEditedActualResult(val || '')}
+            height={150}
+            placeholder="输入实际结果..."
+          />
+        ) : (
+          <div className="detail-drawer-description">
+            {testCase?.actual_result ? (
+              <HtmlContent content={testCase.actual_result} />
+            ) : (
+              <span className="empty-text">暂无实际结果</span>
             )}
           </div>
         )}

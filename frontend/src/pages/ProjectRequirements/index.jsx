@@ -79,6 +79,7 @@ const ProjectRequirements = () => {
           onRequirementClick={handleRequirementClick}
           onTaskClick={handleTaskClick}
           onBugClick={(bugId) => setDetailBugId(bugId)}
+          stickyMode
         />
       </div>
 

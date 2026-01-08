@@ -137,26 +137,36 @@ const SprintIterations = () => {
   const renderContent = () => {
     if (activeTab === 'requirements') {
       return (
-        <RequirementList
-          projectId={parseInt(projectId)}
-          onCreateClick={() => {
-            setEditingReq(null);
-            setReqFormVisible(true);
-          }}
-          onRequirementClick={handleReqClick}
-          onTaskClick={handleTaskClick}
-          onBugClick={handleBugClick}
-        />
+        <div className="iterations-container iterations-fullwidth">
+          <div className="iterations-main">
+            <RequirementList
+              projectId={parseInt(projectId)}
+              onCreateClick={() => {
+                setEditingReq(null);
+                setReqFormVisible(true);
+              }}
+              onRequirementClick={handleReqClick}
+              onTaskClick={handleTaskClick}
+              onBugClick={handleBugClick}
+              stickyMode
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'bugs') {
       return (
-        <BugList
-          projectId={parseInt(projectId)}
-          onCreateClick={() => setBugFormVisible(true)}
-          onBugClick={handleBugClick}
-        />
+        <div className="iterations-container iterations-fullwidth">
+          <div className="iterations-main">
+            <BugList
+              projectId={parseInt(projectId)}
+              onCreateClick={() => setBugFormVisible(true)}
+              onBugClick={handleBugClick}
+              stickyMode
+            />
+          </div>
+        </div>
       );
     }
 

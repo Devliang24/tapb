@@ -33,13 +33,13 @@
 
 .requirement-list-wrapper.sticky-mode .sticky-header {
   flex-shrink: 0;
-  padding: 16px 16px 0 16px;
+  padding: 12px 16px;
   background: #fff;
   z-index: 10;
 }
 
 .requirement-list-wrapper.sticky-mode .toolbar {
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .requirement-list-wrapper.sticky-mode .table-scroll-container {

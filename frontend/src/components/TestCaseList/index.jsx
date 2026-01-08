@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Table, Button, Tag, Select, Input, message, Modal, Dropdown, TreeSelect } from 'antd';
-import { SearchOutlined, EllipsisOutlined, FolderOutlined } from '@ant-design/icons';
+import { useState, useRef } from 'react';
+import { Table, Button, Tag, Select, Input, message, Modal, Dropdown, TreeSelect, Upload, Space } from 'antd';
+import { SearchOutlined, EllipsisOutlined, FolderOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import testCaseService from '../../services/testCaseService';
 import projectService from '../../services/projectService';
@@ -51,13 +51,16 @@ const priorityLabels = {
   low: '低',
 };
 
-const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick }) => {
+const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick, stickyMode = false }) => {
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [moveModalVisible, setMoveModalVisible] = useState(false);
   const [targetCategoryId, setTargetCategoryId] = useState(null);
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [importing, setImporting] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: testCaseData, isLoading } = useQuery({
@@ -190,6 +193,66 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
 
   const handleMove = (testCaseId, newCategoryId) => {
     updateMutation.mutate({ id: testCaseId, data: { category_id: newCategoryId === 0 ? null : newCategoryId } });
+  };
+
+  // 导入导出处理
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await testCaseService.downloadTemplate();
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'testcase_template.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      message.error('下载模板失败');
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await testCaseService.exportTestCases({
+        project_id: projectId,
+        category_id: categoryId,
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `testcases_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      message.success('导出成功');
+    } catch (error) {
+      message.error('导出失败');
+    }
+  };
+
+  const handleImport = async (file) => {
+    setImporting(true);
+    try {
+      const result = await testCaseService.importTestCases(file, projectId);
+      setImportResult(result);
+      if (result.success_count > 0) {
+        queryClient.invalidateQueries(['testcases', projectId]);
+        queryClient.invalidateQueries(['testCaseCategories', projectId]);
+      }
+    } catch (error) {
+      setImportResult({
+        success: false,
+        message: error.response?.data?.detail || '导入失败',
+        success_count: 0,
+        error_count: 0,
+        errors: [],
+      });
+    } finally {
+      setImporting(false);
+    }
+    return false; // 阻止默认上传行为
   };
 
   const handleBatchMove = () => {
@@ -398,10 +461,9 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
     },
   ];
 
-  return (
-    <div className="testcase-list">
-      <div className="toolbar">
-        <div className="toolbar-left">
+  const toolbarContent = (
+    <div className="toolbar">
+      <div className="toolbar-left">
           <Input.Search
             placeholder="搜索用例..."
             style={{ width: 180 }}
@@ -471,12 +533,20 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
               </Button>
             </>
           )}
+          <Button icon={<DownloadOutlined />} onClick={handleExport}>
+            导出
+          </Button>
+          <Button icon={<UploadOutlined />} onClick={() => setImportModalVisible(true)}>
+            导入
+          </Button>
           <Button type="primary" onClick={onCreateClick}>
             创建用例
           </Button>
         </div>
       </div>
+  );
 
+  const tableContent = (
       <Table
         className="testcase-table"
         rowSelection={{
@@ -489,7 +559,7 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
         loading={isLoading}
         rowKey="id"
         scroll={{ x: 900 }}
-        sticky={{ offsetHeader: 49 }}
+        sticky
         pagination={{
           current: page,
           pageSize: testCaseData?.page_size || 20,
@@ -499,6 +569,25 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
           showTotal: (total) => `共 ${total} 条`,
         }}
       />
+  );
+
+  return (
+    <div className={`testcase-list${stickyMode ? ' sticky-mode' : ''}`}>
+      {stickyMode ? (
+        <>
+          <div className="sticky-header">
+            {toolbarContent}
+          </div>
+          <div className="table-scroll-container">
+            {tableContent}
+          </div>
+        </>
+      ) : (
+        <>
+          {toolbarContent}
+          {tableContent}
+        </>
+      )}
 
       <Modal
         title="批量移动用例"
@@ -524,6 +613,69 @@ const TestCaseList = ({ projectId, categoryId, onCreateClick, onTestCaseClick })
           treeLine
           allowClear
         />
+      </Modal>
+
+      <Modal
+        title="导入测试用例"
+        open={importModalVisible}
+        onCancel={() => {
+          setImportModalVisible(false);
+          setImportResult(null);
+        }}
+        footer={importResult ? [
+          <Button key="close" onClick={() => {
+            setImportModalVisible(false);
+            setImportResult(null);
+          }}>关闭</Button>
+        ] : null}
+        width={500}
+      >
+        {!importResult ? (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <Button type="link" onClick={handleDownloadTemplate} style={{ padding: 0 }}>
+                <DownloadOutlined /> 下载导入模板
+              </Button>
+            </div>
+            <Upload.Dragger
+              accept=".xlsx,.xls"
+              beforeUpload={handleImport}
+              showUploadList={false}
+              disabled={importing}
+            >
+              <p className="ant-upload-drag-icon">
+                <UploadOutlined style={{ fontSize: 48, color: '#1890ff' }} />
+              </p>
+              <p className="ant-upload-text">点击或拖拽 Excel 文件到此区域</p>
+              <p className="ant-upload-hint">支持 .xlsx 或 .xls 格式</p>
+            </Upload.Dragger>
+            {importing && <div style={{ textAlign: 'center', marginTop: 16 }}>导入中...</div>}
+          </div>
+        ) : (
+          <div>
+            <div style={{ 
+              padding: 16, 
+              background: importResult.success_count > 0 ? '#f6ffed' : '#fff2f0',
+              borderRadius: 4,
+              marginBottom: 16
+            }}>
+              <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>
+                {importResult.message}
+              </div>
+              <div>成功: {importResult.success_count} 条，失败: {importResult.error_count} 条</div>
+            </div>
+            {importResult.errors?.length > 0 && (
+              <div>
+                <div style={{ fontWeight: 500, marginBottom: 8 }}>错误详情：</div>
+                <ul style={{ paddingLeft: 20, margin: 0, maxHeight: 200, overflow: 'auto' }}>
+                  {importResult.errors.map((err, idx) => (
+                    <li key={idx} style={{ color: '#ff4d4f' }}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   );

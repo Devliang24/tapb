@@ -71,6 +71,7 @@ const ProjectTestCases = () => {
           categoryId={selectedCategoryId}
           onCreateClick={handleCreateClick}
           onTestCaseClick={handleTestCaseClick}
+          stickyMode
         />
       </div>
 

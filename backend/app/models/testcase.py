@@ -60,9 +60,13 @@ class TestCase(Base):
     type = Column(Enum(TestCaseType), default=TestCaseType.FUNCTIONAL, nullable=False)
     status = Column(Enum(TestCaseStatus), default=TestCaseStatus.NOT_EXECUTED, nullable=False)
     priority = Column(Enum(TestCasePriority), default=TestCasePriority.MEDIUM, nullable=False)
-    precondition = Column(Text, nullable=True)       # 前置条件
-    steps = Column(Text, nullable=True)              # 测试步骤 (Markdown)
-    expected_result = Column(Text, nullable=True)    # 预期结果 (Markdown)
+    module = Column(String(200), nullable=True)       # 模块
+    feature = Column(String(200), nullable=True)      # 功能
+    precondition = Column(Text, nullable=True)        # 前置条件
+    steps = Column(Text, nullable=True)               # 测试步骤 (Markdown)
+    test_data = Column(Text, nullable=True)           # 测试数据
+    expected_result = Column(Text, nullable=True)     # 预期结果 (Markdown)
+    actual_result = Column(Text, nullable=True)       # 实际结果
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

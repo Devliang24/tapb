@@ -74,7 +74,7 @@ const defectCauseLabels = {
   other: '其他',
 };
 
-const BugList = ({ projectId, onCreateClick, onBugClick }) => {
+const BugList = ({ projectId, onCreateClick, onBugClick, stickyMode = false }) => {
   const [filters, setFilters] = useState({});
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -397,10 +397,9 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
     },
   ];
 
-  return (
-    <div className="bug-list-wrapper">
-      <div className="toolbar">
-        <div className="toolbar-left">
+  const toolbarContent = (
+    <div className="toolbar">
+      <div className="toolbar-left">
           <Input.Search
             placeholder="搜索 Bug..."
             style={{ width: 180 }}
@@ -489,6 +488,7 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
         </div>
 
         <div className="toolbar-actions">
+          <span className="result-count">共 {bugData?.total || 0} 条</span>
           {selectedRowKeys.length > 0 && (
             <Button danger onClick={handleBatchDelete}>
               批量删除 ({selectedRowKeys.length})
@@ -499,7 +499,9 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
           </Button>
         </div>
       </div>
+  );
 
+  const tableContent = (
       <Table
         className="bug-table"
         rowSelection={{
@@ -512,7 +514,7 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
         loading={isLoading}
         rowKey="id"
         scroll={{ x: 1200 }}
-        sticky={{ offsetHeader: 49 }}
+        sticky
         pagination={{
           current: page,
           pageSize: bugData?.page_size || 20,
@@ -522,6 +524,25 @@ const BugList = ({ projectId, onCreateClick, onBugClick }) => {
           showTotal: (total) => `共 ${total} 条`,
         }}
       />
+  );
+
+  return (
+    <div className={`bug-list-wrapper${stickyMode ? ' sticky-mode' : ''}`}>
+      {stickyMode ? (
+        <>
+          <div className="sticky-header">
+            {toolbarContent}
+          </div>
+          <div className="table-scroll-container">
+            {tableContent}
+          </div>
+        </>
+      ) : (
+        <>
+          {toolbarContent}
+          {tableContent}
+        </>
+      )}
     </div>
   );
 };

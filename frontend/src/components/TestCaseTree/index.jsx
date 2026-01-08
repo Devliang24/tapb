@@ -137,7 +137,6 @@ const TestCaseTree = ({ projectId, selectedCategoryId, onSelectCategory }) => {
       {
         key: 'add',
         label: '新建子目录',
-        icon: <PlusOutlined />,
         onClick: () => {
           setAddingParentId(node.key);
           setExpandedKeys(prev => [...new Set([...prev, node.key])]);
