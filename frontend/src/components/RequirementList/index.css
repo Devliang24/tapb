@@ -272,6 +272,19 @@
   color: #3b82f6;
 }
 
+/* TestCase 标题链接样式 */
+.testcase-title-link {
+  color: #1f2937;
+  text-decoration: none;
+  font-weight: 400;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.testcase-title-link:hover {
+  color: #3b82f6;
+}
+
 /* 展开图标样式 */
 .expand-icon {
   transition: transform 0.2s ease;

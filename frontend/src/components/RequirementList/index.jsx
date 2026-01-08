@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Table, Button, Tag, Space, Select, message, Modal, Dropdown, Input } from 'antd';
 import { 
   PlusOutlined, 
@@ -108,6 +108,24 @@ const taskStatusLabels = {
   DONE: '已完成',
 };
 
+const testCaseStatusColors = {
+  passed: 'green',
+  failed: 'red',
+  not_executed: 'default',
+  PASSED: 'green',
+  FAILED: 'red',
+  NOT_EXECUTED: 'default',
+};
+
+const testCaseStatusLabels = {
+  passed: '通过',
+  failed: '不通过',
+  not_executed: '未执行',
+  PASSED: '通过',
+  FAILED: '不通过',
+  NOT_EXECUTED: '未执行',
+};
+
 const RequirementList = ({ 
   projectId, 
   sprintId, 
@@ -116,7 +134,8 @@ const RequirementList = ({
   onCreateClick, 
   onRequirementClick, 
   onTaskClick, 
-  onBugClick, 
+  onBugClick,
+  onTestCaseClick,
   hideCreateButton = false,
   showQuickCreate = false,
   stickyMode = false,
@@ -158,6 +177,20 @@ const RequirementList = ({
       page 
     }),
   });
+
+  // 统计任务数、缺陷数、用例数
+  const stats = useMemo(() => {
+    const items = reqData?.items || [];
+    let tasksCount = 0;
+    let bugsCount = 0;
+    let testCasesCount = 0;
+    items.forEach(req => {
+      tasksCount += (req.tasks || []).length;
+      bugsCount += (req.bugs || []).length;
+      testCasesCount += (req.test_cases || []).length;
+    });
+    return { tasksCount, bugsCount, testCasesCount };
+  }, [reqData]);
 
   const deleteMutation = useMutation({
     mutationFn: requirementService.deleteRequirement,
@@ -280,6 +313,14 @@ const RequirementList = ({
     }
   };
 
+  const handleFieldChange = (id, field, value, type) => {
+    if (type === 'story') {
+      updateRequirementMutation.mutate({ id, data: { [field]: value } });
+    } else if (type === 'task') {
+      updateTaskMutation.mutate({ id, data: { [field]: value } });
+    }
+  };
+
   const rowSelection = {
     selectedRowKeys,
     onChange: (newSelectedRowKeys) => {
@@ -388,7 +429,17 @@ const RequirementList = ({
       created_at: bug.created_at,
     }));
 
-    const allChildren = [...taskChildren, ...storyBugChildren];
+    const testCaseChildren = (req.test_cases || []).map(tc => ({
+      key: `testcase-${tc.id}`,
+      type: 'testcase',
+      id: tc.id,
+      number: tc.case_number,
+      title: tc.name,
+      status: tc.status,
+      priority: tc.priority,
+    }));
+
+    const allChildren = [...taskChildren, ...storyBugChildren, ...testCaseChildren];
 
     return {
       key: `story-${req.id}`,
@@ -594,7 +645,7 @@ const RequirementList = ({
               </a>
             </div>
           );
-        } else {
+        } else if (record.type === 'bug') {
           const isUnderTask = record.key?.includes('task-bug-');
           return (
             <div className={`title-cell-indent ${isUnderTask ? 'level-2' : 'level-1'}`}>
@@ -611,7 +662,24 @@ const RequirementList = ({
               </a>
             </div>
           );
+        } else if (record.type === 'testcase') {
+          return (
+            <div className="title-cell-indent level-1">
+              <span style={{ width: 8, display: 'inline-block' }} />
+              <Tag color="cyan" className="type-tag-small">CASE</Tag>
+              <a 
+                className="testcase-title-link"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTestCaseClick?.(record.id);
+                }}
+              >
+                {record.title}
+              </a>
+            </div>
+          );
         }
+        return null;
       },
     },
     {
@@ -659,23 +727,48 @@ const RequirementList = ({
               </Tag>
             </Dropdown>
           );
-        } else {
+        } else if (record.type === 'bug') {
           return <Tag color={bugStatusColors[record.status]}>{record.status}</Tag>;
+        } else if (record.type === 'testcase') {
+          return <Tag color={testCaseStatusColors[record.status]}>{testCaseStatusLabels[record.status] || record.status}</Tag>;
         }
+        return '-';
       },
     },
     {
       title: '优先级',
       key: 'priority',
-      width: 80,
+      width: 90,
       render: (_, record) => {
-        if (record.type === 'story') {
-          return <Tag color={priorityColors[record.priority]}>{priorityLabels[record.priority] || record.priority}</Tag>;
-        } else if (record.type === 'task') {
-          return <Tag color={priorityColors[record.priority]}>{priorityLabels[record.priority] || record.priority}</Tag>;
-        } else {
+        if (record.type === 'story' || record.type === 'task') {
+          const priorityItems = [
+            { key: 'high', label: 'High' },
+            { key: 'medium', label: 'Middle' },
+            { key: 'low', label: 'Low' },
+          ];
+          return (
+            <Select
+              size="small"
+              variant="borderless"
+              suffixIcon={null}
+              value={record.priority}
+              style={{ width: 80 }}
+              onChange={(value) => handleFieldChange(record.id, 'priority', value, record.type)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {priorityItems.map(({ key, label }) => (
+                <Select.Option key={key} value={key}>
+                  <Tag color={priorityColors[key]} style={{ margin: 0 }}>{label}</Tag>
+                </Select.Option>
+              ))}
+            </Select>
+          );
+        } else if (record.type === 'bug') {
           return <Tag color={bugPriorityColors[record.priority]}>{record.priority}</Tag>;
+        } else if (record.type === 'testcase') {
+          return <Tag color={priorityColors[record.priority]}>{priorityLabels[record.priority] || record.priority}</Tag>;
         }
+        return '-';
       },
     },
     {
@@ -683,6 +776,27 @@ const RequirementList = ({
       key: 'assignee',
       width: 100,
       render: (_, record) => {
+        if (record.type === 'story' || record.type === 'task') {
+          return (
+            <Select
+              size="small"
+              variant="borderless"
+              suffixIcon={null}
+              value={record.assignee?.id}
+              style={{ width: 90 }}
+              placeholder="未分配"
+              allowClear
+              onChange={(value) => handleFieldChange(record.id, 'assignee_id', value, record.type)}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {members?.map((member) => (
+                <Select.Option key={member.user_id} value={member.user_id}>
+                  {member.user?.username}
+                </Select.Option>
+              ))}
+            </Select>
+          );
+        }
         return record.assignee?.username || '-';
       },
     },
@@ -758,7 +872,9 @@ const RequirementList = ({
       </div>
 
       <div className="toolbar-actions">
-        <span className="result-count">共 {reqData?.total || 0} 条</span>
+        <span className="result-count">
+          需求 {reqData?.total || 0} | 任务 {stats.tasksCount} | 缺陷 {stats.bugsCount} | 用例 {stats.testCasesCount}
+        </span>
         {selectedRowKeys.filter(k => k.startsWith('story-')).length > 0 && (
           <>
             <Dropdown menu={{ items: statusMenuItems, onClick: ({ key }) => handleBulkStatusChange(key) }} placement="bottomLeft">

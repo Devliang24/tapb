@@ -32,7 +32,7 @@ const SprintCard = ({ sprint, selected, onClick, onEdit }) => {
   const iconColor = iconColors[sprint.id % iconColors.length];
   const initial = sprint.name?.charAt(0) || 'S';
 
-  const isActive = sprint.status === 'active' || sprint.status === 'in_progress';
+  const isActive = sprint.status === 'active';
 
   const handleEdit = (e) => {
     e.stopPropagation();

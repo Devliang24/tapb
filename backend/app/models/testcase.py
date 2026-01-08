@@ -74,7 +74,7 @@ class TestCase(Base):
     # Relationships
     project = relationship("Project", back_populates="testcases")
     category = relationship("TestCaseCategory", back_populates="testcases")
-    requirement = relationship("Requirement")
+    requirement = relationship("Requirement", back_populates="test_cases")
     sprint = relationship("Sprint")
     creator = relationship("User", back_populates="created_testcases", foreign_keys=[creator_id])
     history = relationship("TestCaseHistory", back_populates="testcase", cascade="all, delete-orphan")

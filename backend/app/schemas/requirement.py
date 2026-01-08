@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.models.requirement import RequirementStatus, RequirementPriority
 from app.schemas.bug import BugResponse
 from app.schemas.task import TaskResponse
+from app.models.testcase import TestCaseStatus, TestCasePriority
 
 
 class RequirementBase(BaseModel):
@@ -54,6 +55,17 @@ class SprintBrief(BaseModel):
         from_attributes = True
 
 
+class TestCaseBrief(BaseModel):
+    id: int
+    case_number: str
+    name: str
+    status: TestCaseStatus
+    priority: TestCasePriority
+
+    class Config:
+        from_attributes = True
+
+
 class RequirementResponse(RequirementBase):
     id: int
     project_id: int
@@ -75,6 +87,7 @@ class RequirementResponse(RequirementBase):
     sprint: Optional[SprintBrief] = None
     tasks: List[TaskResponse] = []  # 关联的 Task 列表
     bugs: List[BugResponse] = []  # 关联的 Bug 列表
+    test_cases: List[TestCaseBrief] = []  # 关联的测试用例列表
 
     class Config:
         from_attributes = True

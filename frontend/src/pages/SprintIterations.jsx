@@ -133,6 +133,13 @@ const SprintIterations = () => {
     queryClient.invalidateQueries(['requirements', parseInt(projectId)]);
   };
 
+  const handleTestCaseClick = (testCaseId) => {
+    setDetailReqId(null);
+    setDetailTaskId(null);
+    setDetailBugId(null);
+    setDetailTestCaseId(testCaseId);
+  };
+
   // 根据 activeTab 渲染不同的内容
   const renderContent = () => {
     if (activeTab === 'requirements') {
@@ -148,6 +155,7 @@ const SprintIterations = () => {
               onRequirementClick={handleReqClick}
               onTaskClick={handleTaskClick}
               onBugClick={handleBugClick}
+              onTestCaseClick={handleTestCaseClick}
               stickyMode
             />
           </div>
@@ -221,6 +229,7 @@ const SprintIterations = () => {
               onRequirementClick={handleReqClick}
               onTaskClick={handleTaskClick}
               onBugClick={handleBugClick}
+              onTestCaseClick={handleTestCaseClick}
               stickyMode
             />
           ) : (

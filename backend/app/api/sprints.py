@@ -153,6 +153,14 @@ def update_sprint(
                 detail="Cannot modify dates of completed sprint"
             )
 
+    # If setting to ACTIVE, deactivate other active sprints in the same project
+    if sprint_data.status == SprintStatus.ACTIVE:
+        db.query(Sprint).filter(
+            Sprint.project_id == sprint.project_id,
+            Sprint.id != sprint.id,
+            Sprint.status == SprintStatus.ACTIVE
+        ).update({Sprint.status: SprintStatus.COMPLETED})
+
     # Apply updates
     update_data = sprint_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():

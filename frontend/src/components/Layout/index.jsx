@@ -95,12 +95,17 @@ const Layout = ({ children }) => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   const userMenuItems = [
     {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: '退出登录',
-      onClick: logout,
+      onClick: handleLogout,
     },
   ];
 

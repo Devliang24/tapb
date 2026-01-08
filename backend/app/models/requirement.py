@@ -78,6 +78,7 @@ class Requirement(Base):
     tester = relationship("User", foreign_keys=[tester_id])
     bugs = relationship("Bug", back_populates="requirement", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="requirement", cascade="all, delete-orphan")
+    test_cases = relationship("TestCase", back_populates="requirement")
     comments = relationship("RequirementComment", back_populates="requirement", cascade="all, delete-orphan")
     history = relationship("RequirementHistory", back_populates="requirement", cascade="all, delete-orphan")
 
