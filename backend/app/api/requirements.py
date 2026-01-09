@@ -335,10 +335,7 @@ def create_requirement(
             raise HTTPException(
                 status_code=400, detail="Sprint must belong to the same project"
             )
-        if sprint.status == SprintStatus.COMPLETED:
-            raise HTTPException(
-                status_code=400, detail="Cannot add requirement to completed sprint"
-            )
+        # 允许关联需求到已完成的迭代（用于历史追溯）
 
     # Validate assignee if provided
     if req_data.assignee_id:
@@ -451,8 +448,7 @@ def bulk_update_requirements_sprint(
         sprint = db.query(Sprint).filter(Sprint.id == request.sprint_id).first()
         if not sprint:
             raise HTTPException(status_code=404, detail="Sprint not found")
-        if sprint.status == SprintStatus.COMPLETED:
-            raise HTTPException(status_code=400, detail="Cannot assign to completed sprint")
+        # 允许关联需求到已完成的迭代（用于历史追溯）
 
     requirements = (
         db.query(Requirement).filter(Requirement.id.in_(request.requirement_ids)).all()
@@ -525,10 +521,7 @@ def update_requirement(
                 raise HTTPException(
                     status_code=400, detail="Sprint must belong to the same project"
                 )
-            if sprint.status == SprintStatus.COMPLETED:
-                raise HTTPException(
-                    status_code=400, detail="Cannot assign to completed sprint"
-                )
+            # 允许关联需求到已完成的迭代（用于历史追溯）
         else:
             req_data.sprint_id = None
 
